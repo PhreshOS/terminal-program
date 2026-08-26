@@ -1,0 +1,59 @@
+:root {
+  color: #ffffff;
+  background: #000000;
+  font-family: "SFMono-Regular", "Cascadia Code", "Liberation Mono", monospace;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  color: #ffffff;
+  background: #000000;
+}
+
+button { font: inherit; }
+
+.terminal-body,
+.terminal-state {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  color: #ffffff;
+  background: #000000;
+}
+
+.terminal-body {
+  padding: 0.4rem;
+  overflow: hidden;
+}
+
+.terminal-body .xterm { height: 100%; }
+
+.terminal-state {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem;
+  text-align: center;
+}
+
+.terminal-state p { margin: 0; }
+
+.terminal-state button {
+  padding: 0;
+  border: 0;
+  color: #ffffff;
+  background: transparent;
+  text-decoration: underline;
+  cursor: pointer;
+}
