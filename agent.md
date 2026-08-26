@@ -12,6 +12,44 @@ configured shell startup.
 `terminal-server` is the only valid Terminal Server Process. It is Server-only.
 Never start a Server endpoint on a Terminal window's Client Process.
 
+Process launch properties inherit Program defaults when omitted. Therefore,
+always select both Endpoint kinds explicitly.
+
+Create or resolve the shared Server with this exact topology:
+
+```json
+{
+  "action": "findOrCreate",
+  "program": "terminal",
+  "launch": {
+    "name": "terminal-server",
+    "server": true,
+    "client": false
+  }
+}
+```
+
+Create a visible Terminal window as a separate Client-only Process:
+
+```json
+{
+  "action": "create",
+  "program": "terminal",
+  "launch": {
+    "server": false,
+    "client": true
+  }
+}
+```
+
+Never create `terminal-server` with `client` omitted: Terminal's Client default
+would be inherited, the Process would contain both Endpoints, and the Server
+would deliberately stop because that topology is invalid.
+
+The Runtime `shell` Tool is for independent non-interactive background
+commands. When the user asks to work in a visible Terminal, use this Program's
+Client-owned session instead.
+
 To use a Terminal window that is already visible:
 
 1. Identify that Terminal Client Process.
