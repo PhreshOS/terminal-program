@@ -12,7 +12,7 @@ const maximumSessions = 64
 
 export type ApplicationEvent =
   | Readonly<{ type: "session.changed", payload: SessionChange }>
-  | Readonly<{ type: "session.removed", payload: Readonly<{ session: string }> }>
+  | Readonly<{ type: "session.removed", payload: Readonly<{ session: string, client: string | null }> }>
   | Readonly<{ type: "terminal.output", payload: OutputChunk & Readonly<{ session: string }> }>
 
 export type SessionPage = Readonly<{
@@ -140,11 +140,12 @@ export default class Application {
   private remove(identity: string, close: boolean) {
     const session = this.sessions.get(identity)
     if (!session) return
+    const client = session.description().client
     this.sessions.delete(identity)
     this.cleanups.get(identity)?.()
     this.cleanups.delete(identity)
     if (close) session.close()
-    this.emit({ type: "session.removed", payload: { session: identity } })
+    this.emit({ type: "session.removed", payload: { session: identity, client } })
   }
 
   private emit(event: ApplicationEvent) {

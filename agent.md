@@ -71,8 +71,8 @@ identity.
 
 ## Session lifecycles
 
-- `client`: tied to the Client that creates or attaches it. Closing that Client
-  closes the session.
+- `client`: tied to the Client that creates or attaches it. Closing either the
+  Client or the session closes the other.
 - `explicit`: independent of any Client. It remains alive until `session.close`
   is requested or its shell exits.
 
@@ -143,7 +143,9 @@ Payload: `{ session }`. Terminates the PTY and removes the session.
   metadata and the creation correlation when applicable. Session metadata
   includes `client`, the owning Client Process identity for a client-lifecycle
   session, or `null` for an explicit session.
-- `session.removed`: `{ session }` after a session is no longer available.
+- `session.removed`: `{ session, client }` after a session is no longer
+  available. `client` identifies the associated Client Process, or is `null`
+  for an explicit session.
 - `terminal.output`: ordered `{ session, sequence, data }` PTY output.
 
 Output is live and may be missed while disconnected. Use `session.snapshot` to

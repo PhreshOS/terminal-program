@@ -37,8 +37,17 @@ session.close()
 
 const application = new Application()
 const changes: Array<{ session: { session: string }, request?: string }> = []
+let completeRemoval: (value: { session: string, client: string | null }) => void = () => undefined
+const removal = new Promise<{ session: string, client: string | null }>((resolve, reject) => {
+  const timer = setTimeout(() => reject(new Error("The client session did not exit in time")), 5_000)
+  completeRemoval = value => {
+    clearTimeout(timer)
+    resolve(value)
+  }
+})
 application.subscribe(event => {
   if (event.type === "session.changed") changes.push(event.payload)
+  if (event.type === "session.removed") completeRemoval(event.payload)
 })
 
 const first = application.create({
@@ -62,4 +71,6 @@ assert.equal(application.list({ limit: 20, client: "another-client" }).sessions.
 assert.equal(changes.at(-2)?.request, "first-desktop")
 assert.equal(changes.at(-1)?.request, "second-desktop")
 assert.equal(changes.at(-1)?.session.session, first.identity)
+first.write("exit\r")
+assert.deepEqual(await removal, { session: first.identity, client: "shared-client" })
 application.dispose()

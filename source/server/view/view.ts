@@ -23,7 +23,12 @@ export default async function view() {
   }
 
   const application = new Application()
-  application.subscribe(event => current.publish(event.type, event.payload))
+  application.subscribe(event => {
+    current.publish(event.type, event.payload)
+    if (event.type === "session.removed" && event.payload.client) {
+      void exitClient(event.payload.client).catch(error => console.error("Terminal could not exit its associated Client", error))
+    }
+  })
 
   current.answer("session.create", async message => {
     const request = sessionCreate.parse(message.payload)
@@ -92,4 +97,12 @@ async function clientIdentity(endpoint: Endpoint) {
 async function releaseClient(application: Application, endpoint: Endpoint) {
   const process = await endpoint.process()
   if (endpoint === process.client) application.releaseOwner(process.identity)
+}
+
+async function exitClient(identity: string) {
+  const process = await host.process.find(identity)
+  if (!process || !await process.client.exists()) return
+
+  if (await process.server.exists()) await process.client.stop()
+  else await process.exit()
 }
