@@ -1,4 +1,4 @@
-import { HostProvider } from "@phreshos/react"
+import { SystemProvider } from "@phreshos/react"
 import Application from "@client/core/application"
 import usePromise from "@libs/react-promise"
 import { useEffect, useState } from "react"
@@ -6,9 +6,9 @@ import Terminal from "./terminal"
 import "./style.css"
 
 export default function View() {
-  return <HostProvider provide={["theme"]} fallback={<State message="Preparing Terminal…" />}>
+  return <SystemProvider provide={["theme"]} fallback={<State message="Preparing Terminal…" />}>
     <TerminalApplication />
-  </HostProvider>
+  </SystemProvider>
 }
 
 function TerminalApplication() {

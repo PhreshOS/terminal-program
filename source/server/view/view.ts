@@ -1,5 +1,5 @@
 import type { Endpoint } from "@phreshos/core"
-import { current, host } from "@phreshos/server"
+import { current, system } from "@phreshos/server"
 import Application from "@server/core/application"
 import { terminalServerName } from "@server/core/terminal"
 import {
@@ -83,7 +83,7 @@ export default async function view() {
     return { accepted: true } as const
   })
 
-  host.process.subscribe("endpointStop", endpoint => {
+  system.process.subscribe("endpointStop", endpoint => {
     void releaseClient(application, endpoint).catch(() => undefined)
   })
 }
@@ -100,7 +100,7 @@ async function releaseClient(application: Application, endpoint: Endpoint) {
 }
 
 async function exitClient(identity: string) {
-  const process = await host.process.find(identity)
+  const process = await system.process.find(identity)
   if (!process || !await process.client.exists()) return
 
   if (await process.server.exists()) await process.client.stop()
