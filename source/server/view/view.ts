@@ -88,7 +88,9 @@ export default async function view() {
   })
 }
 
-async function clientIdentity(endpoint: Endpoint) {
+async function clientIdentity(endpoint: Endpoint | null) {
+  if (!endpoint) throw new Error("This terminal operation requires a Client")
+
   const process = await endpoint.process()
   if (endpoint !== process.client) throw new Error("This terminal operation requires a Client")
   return process.identity
