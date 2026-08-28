@@ -14,7 +14,7 @@ export default defineConfig({
   server: {
     location: "dist/server",
     start: false,
-    startCommand: "node main.js",
+    entryFile: "main.js",
     installCommand: "npm install --omit=dev && node install.mjs",
     development: {
       startCommand: "vite-node source/server/main.ts"
