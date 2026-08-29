@@ -1,4 +1,4 @@
-import type { Endpoint } from "@phreshos/core"
+import type { Endpoint, SystemEndpointEntity } from "@phreshos/core"
 import { current, system } from "@phreshos/server"
 import Application from "@server/core/application"
 import { terminalServerName } from "@server/core/terminal"
@@ -96,7 +96,7 @@ async function clientIdentity(endpoint: Endpoint | null) {
   return process.identity
 }
 
-async function releaseClient(application: Application, endpoint: Endpoint) {
+async function releaseClient(application: Application, endpoint: SystemEndpointEntity) {
   const process = await endpoint.process()
   if (endpoint === process.client) application.releaseOwner(process.identity)
 }
