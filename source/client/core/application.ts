@@ -1,4 +1,4 @@
-import { current } from "@phreshos/client"
+import { context } from "@phreshos/client"
 import type { Server } from "@phreshos/client"
 import type { OutputChunk, SessionDescription, SessionSignal, SessionSnapshot } from "@server/core/session"
 import { terminalServerName, terminalSessionOption } from "@server/core/terminal"
@@ -44,7 +44,7 @@ export default class Application {
   }
 
   private async open() {
-    const program = await current.program()
+    const program = await context.program()
     const process = await program.process.findOrCreate({
       name: terminalServerName,
       server: true,
@@ -59,7 +59,7 @@ export default class Application {
     )
     await server.waitReady(30_000)
 
-    const assigned = await current.option(terminalSessionOption)
+    const assigned = await context.option(terminalSessionOption)
     const identity = assigned ? await this.attach(server, assigned) : await this.create(server)
 
     this.target = identity
