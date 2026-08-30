@@ -36,7 +36,6 @@
   "dependencies": {
     "@phreshos/client": "^0.1.25",
     "@phreshos/core": "^0.1.25",
-    "@phreshos/react": "^0.1.13",
     "@phreshos/server": "^0.1.26",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/addon-serialize": "^0.14.0",
@@ -49,7 +48,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
-        "@phreshos/cli": "^0.1.37",
+    "@phreshos/cli": "^0.1.37",
     "@rolldown/plugin-babel": "^0.2.3",
     "@types/node": "^26.2.0",
     "@types/react": "^19.2.18",
