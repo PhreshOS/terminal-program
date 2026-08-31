@@ -4,12 +4,15 @@ import { Terminal as Xterm } from "@xterm/xterm"
 import { useEffect, useRef } from "react"
 import "@xterm/xterm/css/xterm.css"
 
-export default function Terminal({ session }: Readonly<{ session: Session }>) {
+export default function Terminal({ session, foreground }: Readonly<{ session: Session, foreground: string }>) {
   const container = useRef<HTMLDivElement>(null)
+  const instance = useRef<Xterm>(null)
 
   useEffect(() => {
     const element = container.current
     if (!element) return
+    const renderer = new AbortController()
+    const transparent = "rgb(0, 0, 0, 0)"
 
     const terminal = new Xterm({
       cursorBlink: true,
@@ -18,11 +21,11 @@ export default function Terminal({ session }: Readonly<{ session: Session }>) {
       fontSize: 13,
       lineHeight: 1.25,
       scrollback: 10_000,
-      allowTransparency: false,
+      allowTransparency: true,
       theme: {
-        background: "#000000",
-        foreground: "#ffffff",
-        cursor: "#ffffff",
+        background: transparent,
+        foreground,
+        cursor: foreground,
         cursorAccent: "#000000",
         selectionBackground: "#ffffff44",
         black: "#1f2430",
@@ -44,8 +47,12 @@ export default function Terminal({ session }: Readonly<{ session: Session }>) {
       }
     })
     const fit = new FitAddon()
+    instance.current = terminal
     terminal.loadAddon(fit)
     terminal.open(element)
+    void loadWebgl(terminal, renderer.signal, () => fit.fit())
+    terminal.element?.querySelectorAll<HTMLElement>(".xterm-viewport, .composition-view")
+      .forEach(layer => { layer.style.backgroundColor = transparent })
 
     const stopSession = session.subscribe(update => {
       if (update.type === "snapshot") {
@@ -68,6 +75,8 @@ export default function Terminal({ session }: Readonly<{ session: Session }>) {
     terminal.focus()
 
     return () => {
+      instance.current = null
+      renderer.abort()
       observer.disconnect()
       stopResize.dispose()
       stopInput.dispose()
@@ -76,11 +85,33 @@ export default function Terminal({ session }: Readonly<{ session: Session }>) {
     }
   }, [session])
 
+  useEffect(() => {
+    const terminal = instance.current
+    if (!terminal) return
+    terminal.options.theme = { ...terminal.options.theme, foreground, cursor: foreground }
+  }, [foreground])
+
   return <main
     className="terminal-body"
     ref={container}
     onClick={() => container.current?.querySelector("textarea")?.focus()}
   />
+}
+
+async function loadWebgl(terminal: Xterm, signal: AbortSignal, fit: () => void) {
+  try {
+    const { WebglAddon } = await import("@xterm/addon-webgl")
+    if (signal.aborted) return
+    const webgl = new WebglAddon()
+    terminal.loadAddon(webgl)
+    fit()
+    webgl.onContextLoss(() => {
+      webgl.dispose()
+      fit()
+    })
+  } catch {
+    // xterm keeps its DOM renderer when WebGL is unavailable.
+  }
 }
 
 function message(value: unknown) {

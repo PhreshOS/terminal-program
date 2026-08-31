@@ -1,6 +1,4 @@
 :root {
-  color: #ffffff;
-  background: #000000;
   font-family: "SFMono-Regular", "Cascadia Code", "Liberation Mono", monospace;
   font-synthesis: none;
 }
@@ -15,8 +13,6 @@ body {
   min-height: 0;
   margin: 0;
   overflow: hidden;
-  color: #ffffff;
-  background: #000000;
 }
 
 button { font: inherit; }
@@ -27,16 +23,23 @@ button { font: inherit; }
   height: 100%;
   min-width: 0;
   min-height: 0;
-  color: #ffffff;
-  background: #000000;
 }
 
 .terminal-body {
-  padding: 0.4rem;
   overflow: hidden;
 }
 
-.terminal-body .xterm { height: 100%; }
+.terminal-body .xterm {
+  height: 100%;
+  padding: 0.4rem;
+  padding-bottom: 0.5rem;
+}
+
+.terminal-body .scrollbar { display: none; }
+
+.terminal-body .xterm-viewport { scrollbar-width: none; }
+
+.terminal-body .xterm-viewport::-webkit-scrollbar { display: none; }
 
 .terminal-state {
   display: grid;
@@ -52,8 +55,6 @@ button { font: inherit; }
 .terminal-state button {
   padding: 0;
   border: 0;
-  color: #ffffff;
-  background: transparent;
   text-decoration: underline;
   cursor: pointer;
 }
