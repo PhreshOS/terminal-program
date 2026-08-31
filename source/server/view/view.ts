@@ -1,4 +1,4 @@
-import type { Endpoint, SystemEndpointEntity } from "@phreshos/core"
+import type { Cleanup, Endpoint, SystemProcessEntity } from "@phreshos/core"
 import { context, system } from "@phreshos/server"
 import Application from "@server/core/application"
 import { terminalServerName } from "@server/core/terminal"
@@ -83,9 +83,21 @@ export default async function view() {
     return { accepted: true } as const
   })
 
-  system.process.subscribe("endpointStop", endpoint => {
-    void releaseClient(application, endpoint).catch(() => undefined)
-  })
+  const followed = new Map<string, Cleanup>()
+  const follow = (process: SystemProcessEntity) => {
+    if (followed.has(process.identity)) return
+
+    const stopClient = process.client.lifecycle.subscribe("stop", () => application.releaseOwner(process.identity))
+    const stopExit = process.subscribe("exit", () => {
+      followed.get(process.identity)?.()
+      followed.delete(process.identity)
+    })
+
+    followed.set(process.identity, () => { stopClient(); stopExit() })
+  }
+
+  system.process.subscribe("create", follow)
+  for (const live of await system.process.list()) follow(live)
 }
 
 async function clientIdentity(endpoint: Endpoint | null) {
@@ -94,11 +106,6 @@ async function clientIdentity(endpoint: Endpoint | null) {
   const process = await endpoint.process()
   if (endpoint !== process.client) throw new Error("This terminal operation requires a Client")
   return process.identity
-}
-
-async function releaseClient(application: Application, endpoint: SystemEndpointEntity) {
-  const process = await endpoint.process()
-  if (endpoint === process.client) application.releaseOwner(process.identity)
 }
 
 async function exitClient(identity: string) {
