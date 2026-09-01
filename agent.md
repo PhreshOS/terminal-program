@@ -15,40 +15,13 @@ Never start a Server endpoint on a Terminal window's Client Process.
 Process launch properties inherit Program defaults when omitted. Therefore,
 always select both Endpoint kinds explicitly.
 
-Create or resolve the shared Server with this exact topology:
-
-```json
-{
-  "action": "findOrCreate",
-  "program": "terminal",
-  "launch": {
-    "name": "terminal-server",
-    "server": true,
-    "client": false
-  }
-}
-```
-
-Create a visible Terminal window as a separate Client-only Process:
-
-```json
-{
-  "action": "create",
-  "program": "terminal",
-  "launch": {
-    "server": false,
-    "client": true
-  }
-}
-```
+Create or resolve the shared `terminal-server` Process with its Server enabled
+and its Client disabled. Create every visible Terminal window as a separate
+Process with its Server disabled and its Client enabled.
 
 Never create `terminal-server` with `client` omitted: Terminal's Client default
 would be inherited, the Process would contain both Endpoints, and the Server
 would deliberately stop because that topology is invalid.
-
-The Runtime `shell` Tool is for independent non-interactive background
-commands. When the user asks to work in a visible Terminal, use this Program's
-Client-owned session instead.
 
 To use a Terminal window that is already visible:
 
@@ -85,9 +58,8 @@ caller-generated correlation string.
 
 Returns only an acknowledgment. The authoritative session is published through
 `session.changed` with the same `request` value. Begin observing that publication
-before requesting creation. When the surrounding runtime supports concurrent
-tool calls, start the event wait and `session.create` in the same turn; a
-publication emitted before observation is not replayed.
+before requesting creation because a publication emitted before observation is
+not replayed.
 
 For `client` lifecycle, creation is idempotent by Client Process: every desktop
 representing that same Client receives the same session rather than creating a
