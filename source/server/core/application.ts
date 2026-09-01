@@ -15,6 +15,11 @@ export type ApplicationEvent =
   | Readonly<{ type: "session.removed", payload: Readonly<{ session: string, client: string | null }> }>
   | Readonly<{ type: "terminal.output", payload: OutputChunk & Readonly<{ session: string }> }>
 
+/** Events published by the Terminal Server for its observers. */
+export type TerminalEvents = {
+  [Event in ApplicationEvent as Event["type"]]: Event["payload"]
+}
+
 export type SessionPage = Readonly<{
   sessions: readonly SessionDescription[]
   nextCursor: string | null
