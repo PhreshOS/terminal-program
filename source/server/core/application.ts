@@ -4,6 +4,7 @@ import Session, {
   type SessionLifecycle,
   type SessionOptions,
   type SessionRead,
+  type SessionScreen,
   type SessionSignal,
   type SessionSnapshot
 } from "./session"
@@ -107,6 +108,10 @@ export default class Application {
 
   public snapshot(session: string): Promise<SessionSnapshot> {
     return this.session(session).snapshot()
+  }
+
+  public screen(session: string): Promise<SessionScreen> {
+    return this.session(session).screen()
   }
 
   public write(session: string, data: string) {

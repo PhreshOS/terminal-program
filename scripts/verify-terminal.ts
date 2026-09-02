@@ -14,14 +14,14 @@ const received = new Promise<void>((resolve, reject) => {
   const stop = session.subscribe(event => {
     if (event.type !== "output") return
     output += event.data
-    if (!output.includes("PHRESH_TERMINAL_OK")) return
+    if (!output.includes("\u001b[31mPHRESH_TERMINAL_OK")) return
     clearTimeout(timer)
     stop()
     resolve()
   })
 })
 
-session.write("printf PHRESH_TERMINAL_OK\\n\r")
+session.write("printf '\\033[31mPHRESH_TERMINAL_OK\\033[0m\\n'\r")
 await received
 
 const snapshot = await session.snapshot()
@@ -29,6 +29,14 @@ assert.equal(snapshot.session.session, session.identity)
 assert.equal(snapshot.cols, 40)
 assert.equal(snapshot.rows, 10)
 assert(snapshot.data.includes("PHRESH_TERMINAL_OK"))
+
+const screen = await session.screen()
+assert.equal(screen.session.session, session.identity)
+assert.equal(screen.sequence, snapshot.sequence)
+assert.equal(screen.cols, 40)
+assert.equal(screen.rows, 10)
+assert(screen.text.includes("PHRESH_TERMINAL_OK"))
+assert(!screen.text.includes("\u001b"))
 
 session.resize(50, 12)
 assert.equal(session.description().cols, 50)

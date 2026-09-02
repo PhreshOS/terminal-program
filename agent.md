@@ -29,8 +29,8 @@ To use a Terminal window that is already visible:
 2. Find the `terminal-server` Process.
 3. Ask its Server for `session.list` with
    `{ client: "<Terminal Client Process identity>", lifecycle: "client", limit: 1 }`.
-4. Use the returned session for `session.write`, `session.read`, or
-   `session.snapshot`.
+4. Use the returned session for `session.write`, `session.screen`,
+   `session.read`, or `session.snapshot`.
 
 If its session is not present yet, observe `session.changed` from
 `terminal-server` and select the session whose `client` equals the visible
@@ -85,6 +85,15 @@ Returns the current session metadata and a bounded sequence of output chunks.
 Payload: `{ session }`.
 
 Returns a serialized terminal screen and the output sequence represented by it.
+
+### `session.screen`
+
+Payload: `{ session }`.
+
+Returns the rendered terminal buffer as plain text with its dimensions and
+output sequence. Use this representation when reading terminal content. Unlike
+raw output and snapshots, it contains no ANSI control sequences and reflects
+cursor movement, overwritten lines, and cleared content.
 
 ### `session.attach`
 

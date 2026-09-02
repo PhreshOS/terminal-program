@@ -53,6 +53,11 @@ export default async function view() {
     return application.snapshot(request.session)
   })
 
+  context.answer("session.screen", message => {
+    const request = sessionRequest.parse(message.payload)
+    return application.screen(request.session)
+  })
+
   context.answer("session.attach", async message => {
     const request = sessionRequest.parse(message.payload)
     application.attach(request.session, await clientIdentity(message.from))

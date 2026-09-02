@@ -38,6 +38,14 @@ export type SessionSnapshot = Readonly<{
   data: string
 }>
 
+export type SessionScreen = Readonly<{
+  session: SessionDescription
+  sequence: number
+  cols: number
+  rows: number
+  text: string
+}>
+
 export type SessionRead = Readonly<{
   session: SessionDescription
   output: readonly OutputChunk[]
@@ -157,6 +165,26 @@ export default class Session {
       cols: this.pty.cols,
       rows: this.pty.rows,
       data: this.serializer.serialize({ scrollback: terminalScrollback })
+    })
+  }
+
+  public async screen(): Promise<SessionScreen> {
+    this.open()
+    await this.rendered
+
+    const buffer = this.terminal.buffer.active
+    const lines: string[] = []
+
+    for (let index = 0; index < buffer.length; index++) {
+      lines.push(buffer.getLine(index)?.translateToString(true) ?? "")
+    }
+
+    return Object.freeze({
+      session: this.description(),
+      sequence: this.sequence,
+      cols: this.pty.cols,
+      rows: this.pty.rows,
+      text: lines.join("\n").replace(/\n+$/, "")
     })
   }
 
