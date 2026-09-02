@@ -25,7 +25,6 @@ export default defineConfig({
     title: "Terminal",
     size: { width: 820, height: 540 },
     development: {
-      url: "http://localhost:5280/",
       startCommand: "vite --config vite.client.ts"
     }
   }
