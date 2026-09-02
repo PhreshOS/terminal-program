@@ -1,5 +1,5 @@
 import { context } from "@phreshos/client"
-import type { Server } from "@phreshos/client"
+import type { ServerEndpoint } from "@phreshos/client"
 import type { TerminalEvents } from "@server/core/application"
 import type { OutputChunk, SessionDescription, SessionSignal, SessionSnapshot } from "@server/core/session"
 import { terminalServerName, terminalSessionOption } from "@server/core/terminal"
@@ -13,15 +13,15 @@ type ChangeWaiter = Readonly<{
   timer: ReturnType<typeof setTimeout>
 }>
 
-function terminalServer(server: Server): Server<TerminalEvents> {
-  return server as unknown as Server<TerminalEvents>
+function terminalServer(server: ServerEndpoint): ServerEndpoint<TerminalEvents> {
+  return server as unknown as ServerEndpoint<TerminalEvents>
 }
 
 export default class Application {
   private readonly cleanups: Array<() => void> = []
   private readonly pending = new Map<string, TerminalOutput[]>()
   private readonly changeWaiters = new Map<string, ChangeWaiter>()
-  private server: Server<TerminalEvents> | null = null
+  private server: ServerEndpoint<TerminalEvents> | null = null
   private terminal: Session | null = null
   private target: string | null = null
   private opening: Promise<Session> | null = null
@@ -77,13 +77,13 @@ export default class Application {
     return terminal
   }
 
-  private async attach(server: Server<TerminalEvents>, session: string) {
+  private async attach(server: ServerEndpoint<TerminalEvents>, session: string) {
     const acknowledgment = await server.ask<Acknowledgment>("session.attach", { session })
     this.assertAcknowledgment(acknowledgment)
     return session
   }
 
-  private async create(server: Server<TerminalEvents>) {
+  private async create(server: ServerEndpoint<TerminalEvents>) {
     const request = crypto.randomUUID()
     const publication = this.waitForChange(request)
     const command = server.ask<Acknowledgment>("session.create", {

@@ -1,4 +1,4 @@
-import type { Cleanup, Endpoint, SystemProcessEntity } from "@phreshos/core"
+import type { Cleanup, Endpoint, Process } from "@phreshos/core"
 import { context, system } from "@phreshos/server"
 import Application from "@server/core/application"
 import { terminalServerName } from "@server/core/terminal"
@@ -89,7 +89,7 @@ export default async function view() {
   })
 
   const followed = new Map<string, Cleanup>()
-  const follow = (process: SystemProcessEntity) => {
+  const follow = (process: Process) => {
     if (followed.has(process.identity)) return
 
     const stopClient = process.client.lifecycle.subscribe("stop", () => application.releaseOwner(process.identity))
