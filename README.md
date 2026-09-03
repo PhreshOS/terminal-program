@@ -1,19 +1,21 @@
 # Terminal
 
-The official PhreshOS terminal Program.
+The PhreshOS Program for real host PTY sessions.
 
-Terminal provides real host PTY sessions to people and agents through the
-standard Program boundary.
+[Programs](https://docs.phreshos.com/runtime/programs) ·
+[Communication](https://docs.phreshos.com/runtime/communication) ·
+[Source](https://github.com/PhreshOS/terminal-program)
 
-## Model
+## Role
 
-The Server owns terminal Sessions, PTY processes, input, resizing, and
-authoritative output history. Client Windows render and interact with those
-Sessions through xterm.js.
+Terminal exposes host PTY sessions to people and other Programs through the
+standard Program boundary. Its Server owns Sessions, PTY processes, input,
+resizing, and authoritative output history; its Client renders and interacts
+with those Sessions through xterm.js.
 
-The browser uses the WebGL renderer when available and retains the DOM renderer
-as its fallback. A Client-lifecycle Session and its associated Client Endpoint
-close together in either direction.
+Shell execution remains inside the Server Endpoint. The Desktop owns only the
+Window representing the Client, and a Client-lifecycle Session closes with its
+associated Client Endpoint.
 
 ## Installation
 
@@ -31,7 +33,7 @@ bun run verify
 bun run dev
 ```
 
-Build, attach the production definition, or package a release with:
+Build, run the production definition, or package a release with:
 
 ```sh
 bun run build
@@ -42,11 +44,17 @@ bun run pack
 `verify` checks the PTY contract, builds both Endpoints, and validates the
 production Program artifact.
 
-## Repository boundary
+## Related repositories
 
-This repository owns terminal Sessions and their Client representation. Shell
-execution remains inside the Server Endpoint; the desktop owns only the Window
-that represents its Client.
+- [PhreshOS System](https://github.com/PhreshOS/system) owns Endpoint execution
+  and the Desktop Window hosting Terminal.
+- [`@phreshos/core`](https://github.com/PhreshOS/core) owns the Program,
+  Endpoint, and communication contracts.
+- [`@phreshos/client`](https://github.com/PhreshOS/client) and
+  [`@phreshos/server`](https://github.com/PhreshOS/server) provide Terminal's
+  runtime boundaries.
+- [`@phreshos/cli`](https://github.com/PhreshOS/cli) installs, runs, and packages
+  Terminal through the ordinary Program workflow.
 
 ## License
 
