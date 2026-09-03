@@ -1,18 +1,16 @@
 import Application from "@client/core/application"
 import usePromise from "@libs/react-promise"
-import { SystemProvider, useDesktopPreferences, useSystemAppearance } from "@phreshos/react"
-import { system } from "@phreshos/client"
+import { DesktopProvider, SystemProvider, useDesktopPreferences, useSystemAppearance } from "@phreshos/react"
+import { desktop, system } from "@phreshos/client"
 import { useEffect, useState } from "react"
 import Terminal from "./terminal"
 import "./style.css"
 
 export default function View() {
-  return <SystemProvider
-    appearance={system.appearance}
-    desktopPreferences={system.desktop.preferences}
-    fallback={<State message="Opening Terminal…" />}
-  >
-    <TerminalApplication />
+  return <SystemProvider system={system} fallback={<State message="Opening Terminal…" />}>
+    <DesktopProvider desktop={desktop} fallback={<State message="Opening Desktop…" />}>
+      <TerminalApplication />
+    </DesktopProvider>
   </SystemProvider>
 }
 

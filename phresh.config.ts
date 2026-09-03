@@ -4,7 +4,7 @@ export default defineConfig({
   identity: "terminal",
   name: "Terminal",
   description: "A shared real PTY terminal for people and agents.",
-  version: "0.1.15",
+  version: "0.1.16",
   icon: "icon.png",
   categories: ["System", "Development"],
   keywords: ["terminal", "shell", "pty", "command line"],
