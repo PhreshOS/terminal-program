@@ -1,6 +1,6 @@
 import Application from "@client/core/application"
 import usePromise from "@libs/react-promise"
-import { DesktopProvider, SystemProvider, useDesktopPreferences, useSystemAppearance } from "@phreshos/react"
+import { DesktopProvider, SystemProvider, useDesktopPreferences } from "@phreshos/react"
 import { desktop, system } from "@phreshos/client"
 import { useEffect, useState } from "react"
 import Terminal from "./terminal"
@@ -15,7 +15,6 @@ export default function View() {
 }
 
 function TerminalApplication() {
-  const appearance = useSystemAppearance()
   const preferences = useDesktopPreferences()
   const [application] = useState(() => new Application())
   const opening = usePromise(() => application.start(), [application])
@@ -28,7 +27,7 @@ function TerminalApplication() {
     retry={() => void opening.safeExecute()}
   />
 
-  return <Terminal session={opening.solve} foreground={appearance.foreground[preferences.theme]} />
+  return <Terminal session={opening.solve} inverted={preferences.theme === "light"} />
 }
 
 function State({ message, retry }: Readonly<{ message: string, retry?: () => void }>) {

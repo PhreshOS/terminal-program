@@ -32,10 +32,9 @@ button { font: inherit; }
 .terminal-body .xterm {
   height: 100%;
   padding: 0.4rem;
-  padding-bottom: 0.5rem;
 }
 
-.terminal-body .scrollbar { display: none; }
+.terminal-body .scrollbar { display: none !important; }
 
 .terminal-body .xterm-viewport { scrollbar-width: none; }
 

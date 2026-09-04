@@ -1,12 +1,11 @@
 import Session from "@client/core/session"
-import { FitAddon } from "@xterm/addon-fit"
 import { Terminal as Xterm } from "@xterm/xterm"
 import { useEffect, useRef } from "react"
 import "@xterm/xterm/css/xterm.css"
+import fitTerminal from "./fit-terminal"
 
-export default function Terminal({ session, foreground }: Readonly<{ session: Session, foreground: string }>) {
+export default function Terminal({ session, inverted }: Readonly<{ session: Session, inverted: boolean }>) {
   const container = useRef<HTMLDivElement>(null)
-  const instance = useRef<Xterm>(null)
 
   useEffect(() => {
     const element = container.current
@@ -23,34 +22,12 @@ export default function Terminal({ session, foreground }: Readonly<{ session: Se
       scrollback: 10_000,
       allowTransparency: true,
       theme: {
-        background: transparent,
-        foreground,
-        cursor: foreground,
-        cursorAccent: "#000000",
-        selectionBackground: "#ffffff44",
-        black: "#1f2430",
-        red: "#e35d6a",
-        green: "#65b584",
-        yellow: "#d6ad5c",
-        blue: "#5d8ee3",
-        magenta: "#aa7ed1",
-        cyan: "#55aeb8",
-        white: "#d8dee9",
-        brightBlack: "#68707d",
-        brightRed: "#f07178",
-        brightGreen: "#8bd49c",
-        brightYellow: "#ffb454",
-        brightBlue: "#59c2ff",
-        brightMagenta: "#d2a6ff",
-        brightCyan: "#95e6cb",
-        brightWhite: "#f3f4f5"
+        background: transparent
       }
     })
-    const fit = new FitAddon()
-    instance.current = terminal
-    terminal.loadAddon(fit)
     terminal.open(element)
-    void loadWebgl(terminal, renderer.signal, () => fit.fit())
+    const fit = () => fitTerminal(terminal)
+    void loadWebgl(terminal, renderer.signal, fit)
     terminal.element?.querySelectorAll<HTMLElement>(".xterm-viewport, .composition-view")
       .forEach(layer => { layer.style.backgroundColor = transparent })
 
@@ -69,13 +46,12 @@ export default function Terminal({ session, foreground }: Readonly<{ session: Se
     const stopResize = terminal.onResize(size => {
       void session.resize(size.cols, size.rows).catch(error => terminal.write(`\r\n\x1b[31m${message(error)}\x1b[0m\r\n`))
     })
-    const observer = new ResizeObserver(() => fit.fit())
+    const observer = new ResizeObserver(fit)
     observer.observe(element)
-    fit.fit()
+    fit()
     terminal.focus()
 
     return () => {
-      instance.current = null
       renderer.abort()
       observer.disconnect()
       stopResize.dispose()
@@ -85,15 +61,10 @@ export default function Terminal({ session, foreground }: Readonly<{ session: Se
     }
   }, [session])
 
-  useEffect(() => {
-    const terminal = instance.current
-    if (!terminal) return
-    terminal.options.theme = { ...terminal.options.theme, foreground, cursor: foreground }
-  }, [foreground])
-
   return <main
     className="terminal-body"
     ref={container}
+    style={{ filter: inverted ? "invert(100%)" : undefined }}
     onClick={() => container.current?.querySelector("textarea")?.focus()}
   />
 }
