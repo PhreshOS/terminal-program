@@ -26,11 +26,12 @@ button { font: inherit; }
 }
 
 .terminal-body {
+  display: grid;
+  place-items: center;
   overflow: hidden;
 }
 
 .terminal-body .xterm {
-  height: 100%;
   padding: 0.4rem;
 }
 

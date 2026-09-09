@@ -14,10 +14,14 @@ export default function fitTerminal(terminal: Terminal) {
   if (!cell.width || !cell.height) return
 
   const style = getComputedStyle(element)
-  const width = parent.clientWidth - pixels(style.paddingLeft) - pixels(style.paddingRight)
   const height = parent.clientHeight - pixels(style.paddingTop) - pixels(style.paddingBottom)
-  const cols = Math.max(2, Math.floor(width / cell.width))
   const rows = Math.max(1, Math.floor(height / cell.height))
+  // Give the sides the same minimum inset as the centered rows.
+  const inset = Math.max(0, (parent.clientHeight - rows * cell.height) / 2)
+  const width = parent.clientWidth
+    - Math.max(inset, pixels(style.paddingLeft))
+    - Math.max(inset, pixels(style.paddingRight))
+  const cols = Math.max(2, Math.floor(width / cell.width))
 
   if (terminal.cols === cols && terminal.rows === rows) return
 
