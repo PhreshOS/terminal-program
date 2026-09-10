@@ -1,5 +1,5 @@
 import { context } from "@phreshos/client"
-import type { ServerEndpoint } from "@phreshos/client"
+import type { ServerEndpoint } from "@phreshos/core"
 import type { TerminalEvents } from "@server/core/application"
 import type { OutputChunk, SessionDescription, SessionSignal, SessionSnapshot } from "@server/core/session"
 import { terminalServerName, terminalSessionOption } from "@server/core/terminal"
