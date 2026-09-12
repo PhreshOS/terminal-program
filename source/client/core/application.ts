@@ -64,7 +64,7 @@ export default class Application {
     )
     await server.waitReady(30_000)
 
-    const assigned = await context.option(terminalSessionOption)
+    const assigned = await context.options(terminalSessionOption)
     const identity = assigned ? await this.attach(server, assigned) : await this.create(server)
 
     this.target = identity
