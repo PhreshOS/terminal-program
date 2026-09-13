@@ -10,7 +10,6 @@ export default function Terminal({ session, inverted }: Readonly<{ session: Sess
   useEffect(() => {
     const element = container.current
     if (!element) return
-    const renderer = new AbortController()
     const transparent = "rgb(0, 0, 0, 0)"
 
     const terminal = new Xterm({
@@ -27,7 +26,6 @@ export default function Terminal({ session, inverted }: Readonly<{ session: Sess
     })
     terminal.open(element)
     const fit = () => fitTerminal(terminal)
-    void loadWebgl(terminal, renderer.signal, fit)
     terminal.element?.querySelectorAll<HTMLElement>(".xterm-viewport, .composition-view")
       .forEach(layer => { layer.style.backgroundColor = transparent })
 
@@ -52,7 +50,6 @@ export default function Terminal({ session, inverted }: Readonly<{ session: Sess
     terminal.focus()
 
     return () => {
-      renderer.abort()
       observer.disconnect()
       stopResize.dispose()
       stopInput.dispose()
@@ -67,22 +64,6 @@ export default function Terminal({ session, inverted }: Readonly<{ session: Sess
     style={{ filter: inverted ? "invert(100%)" : undefined }}
     onClick={() => container.current?.querySelector("textarea")?.focus()}
   />
-}
-
-async function loadWebgl(terminal: Xterm, signal: AbortSignal, fit: () => void) {
-  try {
-    const { WebglAddon } = await import("@xterm/addon-webgl")
-    if (signal.aborted) return
-    const webgl = new WebglAddon()
-    terminal.loadAddon(webgl)
-    fit()
-    webgl.onContextLoss(() => {
-      webgl.dispose()
-      fit()
-    })
-  } catch {
-    // xterm keeps its DOM renderer when WebGL is unavailable.
-  }
 }
 
 function message(value: unknown) {
