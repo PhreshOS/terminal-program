@@ -3,7 +3,7 @@ import { z } from "zod"
 const identity = z.string().uuid()
 const dimension = z.number().int().min(1).max(500)
 
-export const sessionCreate = z.strictObject({
+export const sessionCreate = z.object({
   request: z.string().min(1).max(128),
   lifecycle: z.enum(["client", "explicit"]),
   cols: dimension.default(80),
@@ -12,7 +12,7 @@ export const sessionCreate = z.strictObject({
   shell: z.string().min(1).max(4096).optional()
 })
 
-export const sessionList = z.strictObject({
+export const sessionList = z.object({
   limit: z.number().int().min(1).max(100).default(20),
   cursor: z.string().min(1).max(256).optional(),
   lifecycle: z.enum(["client", "explicit"]).optional(),
@@ -20,7 +20,7 @@ export const sessionList = z.strictObject({
   status: z.literal("running").optional()
 })
 
-export const sessionRequest = z.strictObject({ session: identity })
+export const sessionRequest = z.object({ session: identity })
 
 export const sessionRead = sessionRequest.extend({
   after: z.number().int().min(0).default(0),
