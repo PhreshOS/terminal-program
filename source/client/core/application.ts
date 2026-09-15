@@ -50,7 +50,7 @@ export default class Application {
 
   private async open() {
     const program = await context.program()
-    const process = await program.process.findOrCreate({
+    const process = await program.findOrCreateProcess({
       name: terminalServerName,
       server: true,
       client: false
