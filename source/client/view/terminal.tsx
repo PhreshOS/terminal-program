@@ -1,8 +1,32 @@
 import Session from "@client/core/session"
+import { WebglAddon } from "@xterm/addon-webgl"
 import { Terminal as Xterm } from "@xterm/xterm"
 import { useEffect, useRef } from "react"
 import "@xterm/xterm/css/xterm.css"
 import fitTerminal from "./fit-terminal"
+
+function loadPreferredRenderer(terminal: Xterm) {
+  let webgl: WebglAddon | undefined
+  let stopContextLoss: { dispose(): void } | undefined
+
+  const dispose = () => {
+    stopContextLoss?.dispose()
+    stopContextLoss = undefined
+    webgl?.dispose()
+    webgl = undefined
+  }
+
+  try {
+    webgl = new WebglAddon()
+    stopContextLoss = webgl.onContextLoss(dispose)
+    terminal.loadAddon(webgl)
+  }
+  catch {
+    dispose()
+  }
+
+  return dispose
+}
 
 export default function Terminal({ session, inverted }: Readonly<{ session: Session, inverted: boolean }>) {
   const container = useRef<HTMLDivElement>(null)
@@ -25,6 +49,7 @@ export default function Terminal({ session, inverted }: Readonly<{ session: Sess
       }
     })
     terminal.open(element)
+    const stopRenderer = loadPreferredRenderer(terminal)
     const fit = () => fitTerminal(terminal)
     terminal.element?.querySelectorAll<HTMLElement>(".xterm-viewport, .composition-view")
       .forEach(layer => { layer.style.backgroundColor = transparent })
@@ -54,6 +79,7 @@ export default function Terminal({ session, inverted }: Readonly<{ session: Sess
       stopResize.dispose()
       stopInput.dispose()
       stopSession()
+      stopRenderer()
       terminal.dispose()
     }
   }, [session])
