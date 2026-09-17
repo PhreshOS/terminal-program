@@ -14,10 +14,10 @@ export default defineConfig({
   server: {
     location: "dist/server",
     start: false,
-    entryFile: "main.js",
+    worker: "main.js",
     installCommand: "npm install --omit=dev --no-audit && node install.mjs",
     development: {
-      startCommand: "vite-node source/server/main.ts"
+      command: "vite-node source/server/main.ts"
     }
   },
   client: {

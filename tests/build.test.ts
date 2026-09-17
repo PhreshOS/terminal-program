@@ -8,7 +8,7 @@ test("build contract", async () => {
   assert.equal(config.identity, "terminal")
   assert.equal(config.version, manifest.version)
   assert.equal(config.server?.start, false)
-  assert.equal(config.server?.entryFile, "main.js")
+  assert.equal(config.server?.worker, "main.js")
   assert.equal(config.server?.installCommand, "npm install --omit=dev --no-audit && node install.mjs")
   assert.equal(config.client?.location, "dist/client")
   assert(readFileSync("dist/client/index.html", "utf8").length > 0)
