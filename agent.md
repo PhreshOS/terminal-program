@@ -42,6 +42,28 @@ Explicit sessions are for headless work. To make one visible, create a Terminal
 Client Process with its immutable `session` option set to the explicit session
 identity.
 
+## Execute interface
+
+Expose Terminal through the shared Execute request contract. Resolve its
+authoritative Server with:
+
+```json
+{
+  "$domain": "process",
+  "$operation": "findOrCreate",
+  "program": "terminal",
+  "launch": {
+    "name": "terminal-server",
+    "server": { "service": true },
+    "client": false
+  }
+}
+```
+
+Send every request-response event described below through `endpoint.ask` using
+`program: "terminal"`, `process: "terminal-server"`, `endpoint: "server"`, the
+documented event name, and its payload as `input`.
+
 ## Session lifecycles
 
 - `client`: tied to the Client that creates or attaches it. Closing either the
