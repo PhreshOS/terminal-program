@@ -16,16 +16,12 @@ export default defineConfig({
     start: false,
     worker: "main.js",
     installCommand: "npm install --omit=dev --no-audit && node install.mjs",
-    development: {
-      command: "vite-node source/server/main.ts"
-    }
+    devCommand: "vite-node source/server/main.ts"
   },
   client: {
     location: "dist/client",
     title: "Terminal",
     size: { width: 820, height: 540 },
-    development: {
-      startCommand: "vite --config vite.client.ts"
-    }
+    devCommand: "vite --config vite.client.ts"
   }
 })
