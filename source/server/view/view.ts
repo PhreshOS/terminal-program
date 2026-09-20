@@ -92,8 +92,10 @@ export default async function view() {
   const follow = (process: Process) => {
     if (followed.has(process.identity)) return
 
-    const stopClient = process.client.lifecycle.subscribe("stop", () => application.releaseOwner(process.identity))
+    const releaseOwner = () => application.releaseOwner(process.identity)
+    const stopClient = process.client.lifecycle.subscribe("stop", releaseOwner)
     const stopExit = process.subscribe("exit", () => {
+      releaseOwner()
       followed.get(process.identity)?.()
       followed.delete(process.identity)
     })
