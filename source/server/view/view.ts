@@ -14,7 +14,7 @@ import {
 
 export default async function view() {
   const process = await context.process()
-  const hasClient = await context.client.exists()
+  const hasClient = await context.client.running()
 
   if (process.name !== terminalServerName || hasClient) {
     if (hasClient) await context.stop()
@@ -115,8 +115,8 @@ async function clientIdentity(endpoint: Endpoint | null) {
 
 async function exitClient(identity: string) {
   const process = await system.process.find(identity)
-  if (!process || !await process.client.exists()) return
+  if (!process || !await process.client.running()) return
 
-  if (await process.server.exists()) await process.client.stop()
+  if (await process.server.running()) await process.client.stop()
   else await process.exit()
 }
