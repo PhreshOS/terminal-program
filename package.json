@@ -38,7 +38,7 @@
     "@phreshos/client": "^0.1.48",
     "@phreshos/core": "^0.1.56",
     "@phreshos/react": "^0.1.29",
-    "@phreshos/server": "^0.1.52",
+    "@phreshos/server": "^0.1.53",
     "@xterm/addon-serialize": "^0.14.0",
     "@xterm/addon-webgl": "^0.19.0",
     "@xterm/headless": "^6.0.0",
