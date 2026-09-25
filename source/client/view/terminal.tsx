@@ -28,8 +28,18 @@ function loadPreferredRenderer(terminal: Xterm) {
   return dispose
 }
 
-export default function Terminal({ session, inverted }: Readonly<{ session: Session, inverted: boolean }>) {
+export default function Terminal({ session, inverted, onReady, visible }: Readonly<{
+  session: Session
+  inverted: boolean
+  onReady: () => void
+  visible: boolean
+}>) {
   const container = useRef<HTMLDivElement>(null)
+  const instance = useRef<Xterm | null>(null)
+
+  useEffect(() => {
+    if (visible) instance.current?.focus()
+  }, [visible])
 
   useEffect(() => {
     const element = container.current
@@ -48,6 +58,15 @@ export default function Terminal({ session, inverted }: Readonly<{ session: Sess
         background: transparent
       }
     })
+    instance.current = terminal
+    let active = true
+    let initialParsed = false
+    let initialRendered = false
+    const stopInitialRender = terminal.onRender(() => {
+      if (!active || !initialParsed || initialRendered) return
+      initialRendered = true
+      onReady()
+    })
     terminal.open(element)
     const stopRenderer = loadPreferredRenderer(terminal)
     const fit = () => fitTerminal(terminal)
@@ -57,7 +76,12 @@ export default function Terminal({ session, inverted }: Readonly<{ session: Sess
     const stopSession = session.subscribe(update => {
       if (update.type === "snapshot") {
         terminal.reset()
-        terminal.write(update.data)
+        terminal.write(update.data, () => {
+          if (!active) return
+          // The initial snapshot must be parsed and painted before revealing the terminal.
+          initialParsed = true
+          terminal.refresh(0, terminal.rows - 1)
+        })
       }
       if (update.type === "output") terminal.write(update.data)
       if (update.type === "change" && session.isRemoved) terminal.write("\r\n\x1b[90mSession ended.\x1b[0m\r\n")
@@ -72,17 +96,19 @@ export default function Terminal({ session, inverted }: Readonly<{ session: Sess
     const observer = new ResizeObserver(fit)
     observer.observe(element)
     fit()
-    terminal.focus()
 
     return () => {
+      active = false
       observer.disconnect()
+      stopInitialRender.dispose()
       stopResize.dispose()
       stopInput.dispose()
       stopSession()
       stopRenderer()
       terminal.dispose()
+      if (instance.current === terminal) instance.current = null
     }
-  }, [session])
+  }, [onReady, session])
 
   return <main
     className="terminal-body"

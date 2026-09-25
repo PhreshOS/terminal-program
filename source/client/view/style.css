@@ -17,6 +17,8 @@ body {
 
 button { font: inherit; }
 
+.terminal-readiness-stage,
+.terminal-readiness-content,
 .terminal-body,
 .terminal-state {
   width: 100%;
@@ -24,6 +26,9 @@ button { font: inherit; }
   min-width: 0;
   min-height: 0;
 }
+
+.terminal-readiness-stage { position: relative; }
+.terminal-initial-loading { position: absolute; inset: 0; }
 
 .terminal-body {
   display: grid;
