@@ -4,6 +4,7 @@ import usePromise from "@libs/react-promise"
 import Readiness, { useReadiness, useReady } from "@libs/readiness"
 import { DesktopProvider, SystemProvider, useDesktopPreferences } from "@phreshos/react"
 import { desktop, system } from "@phreshos/client"
+import { DocumentTheme, UIProvider } from "@phreshos/react-ui"
 import { useCallback, useEffect, useLayoutEffect, useState, type ReactNode } from "react"
 import Terminal from "./terminal"
 import "./style.css"
@@ -28,6 +29,7 @@ export default function View() {
         <ReadyStage requirement={systemRequirement}>
           <DesktopProvider desktop={desktop}>
             <ReadyStage requirement={desktopRequirement}>
+              <DesktopTheme />
               <TerminalApplication />
             </ReadyStage>
           </DesktopProvider>
@@ -57,6 +59,11 @@ function TerminalReadiness({ children }: Readonly<{ children: ReactNode }>) {
 function ReadyStage({ children, requirement }: Readonly<{ children: ReactNode, requirement: Requirement }>) {
   useReady(requirement)
   return children
+}
+
+/** The page follows the Desktop's theme, so its frame stays transparent when the theme changes. */
+function DesktopTheme() {
+  return <UIProvider preferences={useDesktopPreferences()}><DocumentTheme /></UIProvider>
 }
 
 function TerminalApplication() {
