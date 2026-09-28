@@ -4,7 +4,7 @@ export default defineConfig({
   identity: "terminal",
   name: "Terminal",
   description: "A shared real PTY terminal for people and agents.",
-  version: "0.1.35",
+  version: "0.1.36",
   icon: "icon.png",
   categories: ["System", "Development"],
   keywords: ["terminal", "shell", "pty", "command line"],
@@ -21,7 +21,6 @@ export default defineConfig({
   client: {
     location: "dist/client",
     title: "Terminal",
-    size: { width: 820, height: 540 },
     devCommand: "vite --config vite.client.ts"
   }
 })
