@@ -21,6 +21,8 @@ export default defineConfig({
   client: {
     location: "dist/client",
     title: "Terminal",
+    // Wider than the Desktop's square default, so a line of output fits across it.
+    size: { width: 880, height: 560 },
     devCommand: "vite --config vite.client.ts"
   }
 })
