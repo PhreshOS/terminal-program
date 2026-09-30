@@ -4,7 +4,7 @@ export default defineConfig({
   identity: "terminal",
   name: "Terminal",
   description: "A shared real PTY terminal for people and agents.",
-  version: "0.1.40",
+  version: "0.1.41",
   // Drawn from icon.svg: an apricot screen, and on its dark soil a prompt whose cursor is a sprout.
   icon: "icon.png",
   categories: ["System", "Development"],
