@@ -14,7 +14,8 @@
       "@/*": ["./*"],
       "@client/*": ["./source/client/*"],
       "@server/*": ["./source/server/*"],
-      "@libs/*": ["./source/libs/*"]
+      "@libs/*": ["./source/libs/*"],
+      "@shared/*": ["./source/shared/*"]
     }
   }
 }

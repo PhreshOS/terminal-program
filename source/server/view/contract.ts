@@ -1,41 +1,21 @@
 import { z } from "zod"
 
-const identity = z.string().uuid()
-const dimension = z.number().int().min(1).max(500)
+const identity = z.string().min(1).max(100)
+const folder = z.string().startsWith("/")
 
-export const sessionCreate = z.object({
-  request: z.string().min(1).max(128),
-  lifecycle: z.enum(["client", "explicit"]),
-  cols: dimension.default(80),
-  rows: dimension.max(300).default(24),
-  cwd: z.string().min(1).max(4096).optional(),
-  shell: z.string().min(1).max(4096).optional()
-})
+/** A place on the Desktop's plane: pixels, or a share of the view such as "50% - 200". */
+const value = z.union([z.number(), z.string().min(1).max(100)])
+const size = { cols: z.number().int().min(2).max(1000), rows: z.number().int().min(1).max(500) }
 
-export const sessionList = z.object({
-  limit: z.number().int().min(1).max(100).default(20),
-  cursor: z.string().min(1).max(256).optional(),
-  lifecycle: z.enum(["client", "explicit"]).optional(),
-  client: identity.optional(),
-  status: z.literal("running").optional()
-})
-
-export const sessionRequest = z.object({ session: identity })
-
-export const sessionRead = sessionRequest.extend({
-  after: z.number().int().min(0).default(0),
-  limit: z.number().int().min(1).max(512).default(128)
-})
-
-export const sessionWrite = sessionRequest.extend({
-  data: z.string().max(64 * 1024)
-})
-
-export const sessionResize = sessionRequest.extend({
-  cols: dimension,
-  rows: dimension.max(300)
-})
-
-export const sessionSignal = sessionRequest.extend({
-  signal: z.enum(["SIGINT", "SIGTERM", "SIGHUP", "SIGKILL"])
-})
+/** What windows, agents, and other Programs may ask the Terminal Server, and the shape of each question. */
+export const contract = {
+    open: z.object({ cwd: folder, position: z.object({ x: value, y: value }).optional() }),
+    create: z.object({ window: identity, ...size, cwd: folder.optional() }),
+    attach: z.object({ session: identity, window: identity }),
+    session: z.object({ session: identity }),
+    write: z.object({ session: identity, data: z.string().max(1024 * 1024) }),
+    resize: z.object({ session: identity, ...size }),
+    watch: z.object({ session: identity, window: identity }),
+    acknowledge: z.object({ session: identity, window: identity, characters: z.number().int().min(0) }),
+    read: z.object({ session: identity, after: z.number().int().min(0).default(0), limit: z.number().int().min(1).max(1000).default(200) })
+}

@@ -1,124 +1,101 @@
-import type { Cleanup, Endpoint, Process } from "@phreshos/core"
-import { context, system } from "@phreshos/server"
-import Application from "@server/core/application"
-import { terminalServerName } from "@server/core/terminal"
-import {
-  sessionCreate,
-  sessionList,
-  sessionRead,
-  sessionRequest,
-  sessionResize,
-  sessionSignal,
-  sessionWrite
-} from "./contract"
+import { context } from "@phreshos/server"
+import Sessions, { type Windows } from "@server/core/sessions"
+import { outputEvent } from "@shared/events"
+import { terminalService } from "@shared/service"
+import { contract } from "./contract"
 
+/**
+ * The Terminal Server: every session, for every window and for agents. It answers questions about
+ * sessions and announces two things: that the list changed, and each session's output, under that
+ * session's own event, so a window receives only what it shows.
+ */
 export default async function view() {
-  const process = await context.process()
-  const hasClient = await context.client.running()
+    const program = await context.program()
+    await startWithTheSystem(program)
 
-  if (process.name !== terminalServerName || hasClient) {
-    if (hasClient) await context.stop()
-    else await process.exit()
-    return
-  }
-
-  const application = new Application()
-  application.subscribe(event => {
-    context.publish(event.type, event.payload)
-    if (event.type === "session.removed" && event.payload.client) {
-      void exitClient(event.payload.client).catch(error => console.error("Terminal could not exit its associated Client", error))
+    // A window is a Process of this Program; it has ended once its Process has.
+    const windows: Windows = {
+        followEnds(ended) { program.subscribe("processExit", event => ended(event.process.identity)) },
+        async exists(window) { return await program.findProcess(window) !== null }
     }
-  })
 
-  context.answer("session.create", async message => {
-    const request = sessionCreate.parse(message.payload)
-    const owner = request.lifecycle === "client" ? await clientIdentity(message.from) : undefined
-    const { request: correlation, ...options } = request
-    application.create({ ...options, owner }, correlation)
-    return { accepted: true } as const
-  })
+    const sessions = new Sessions(windows)
 
-  context.answer("session.list", message => {
-    const request = sessionList.parse(message.payload ?? {})
-    return application.list(request)
-  })
-
-  context.answer("session.read", message => {
-    const request = sessionRead.parse(message.payload)
-    return application.read(request.session, request.after, request.limit)
-  })
-
-  context.answer("session.snapshot", message => {
-    const request = sessionRequest.parse(message.payload)
-    return application.snapshot(request.session)
-  })
-
-  context.answer("session.screen", message => {
-    const request = sessionRequest.parse(message.payload)
-    return application.screen(request.session)
-  })
-
-  context.answer("session.attach", async message => {
-    const request = sessionRequest.parse(message.payload)
-    application.attach(request.session, await clientIdentity(message.from))
-    return { accepted: true } as const
-  })
-
-  context.answer("session.write", message => {
-    const request = sessionWrite.parse(message.payload)
-    application.write(request.session, request.data)
-    return { accepted: true } as const
-  })
-
-  context.answer("session.resize", message => {
-    const request = sessionResize.parse(message.payload)
-    application.resize(request.session, request.cols, request.rows)
-    return { accepted: true } as const
-  })
-
-  context.answer("session.signal", message => {
-    const request = sessionSignal.parse(message.payload)
-    application.signal(request.session, request.signal)
-    return { accepted: true } as const
-  })
-
-  context.answer("session.close", message => {
-    const request = sessionRequest.parse(message.payload)
-    application.close(request.session)
-    return { accepted: true } as const
-  })
-
-  const followed = new Map<string, Cleanup>()
-  const follow = (process: Process) => {
-    if (followed.has(process.identity)) return
-
-    const releaseOwner = () => application.releaseOwner(process.identity)
-    const stopClient = process.client.lifecycle.subscribe("stop", releaseOwner)
-    const stopExit = process.subscribe("exit", () => {
-      releaseOwner()
-      followed.get(process.identity)?.()
-      followed.delete(process.identity)
+    sessions.subscribe(event => {
+        if (event.type === "changed") void context.publish("sessions.changed", sessions.list())
+        else void context.publish(outputEvent(event.session), event.output)
     })
 
-    followed.set(process.identity, () => { stopClient(); stopExit() })
-  }
+    context.answer("sessions.list", () => sessions.list())
 
-  system.process.subscribe("create", follow)
-  for (const live of await system.process.list()) follow(live)
+    // Another Program, or anyone, opens a folder in the Terminal: a new window, whose first session
+    // starts there. It stands where the asker places it, such as beside the window it was asked from.
+    context.answer("session.open", async ({ payload }) => {
+        const { cwd, position } = contract.open.parse(payload)
+        await program.createProcess({ server: false, client: position ? { position } : true, options: { cwd } })
+    })
+
+    context.answer("session.create", ({ payload }) => {
+        const { window, ...options } = contract.create.parse(payload)
+        return sessions.create(window, options)
+    })
+
+    context.answer("session.attach", ({ payload }) => {
+        const { session, window } = contract.attach.parse(payload)
+        return sessions.attach(session, window)
+    })
+
+    context.answer("session.detach", ({ payload }) => sessions.detach(contract.session.parse(payload).session))
+
+    context.answer("session.close", ({ payload }) => sessions.close(contract.session.parse(payload).session))
+
+    context.answer("session.write", ({ payload }) => {
+        const { session, data } = contract.write.parse(payload)
+        sessions.get(session).write(data)
+    })
+
+    context.answer("session.resize", ({ payload }) => {
+        const { session, cols, rows } = contract.resize.parse(payload)
+        sessions.get(session).resize(cols, rows)
+    })
+
+    // A window shows a session: from here on its drawing counts toward the shell's pace, and it
+    // receives the screen as it is, numbered, to continue from with the output that follows.
+    context.answer("session.watch", ({ payload }) => {
+        const { session, window } = contract.watch.parse(payload)
+        const current = sessions.get(session)
+        current.watch(window)
+        return current.snapshot()
+    })
+
+    context.answer("session.unwatch", ({ payload }) => {
+        const { session, window } = contract.watch.parse(payload)
+        sessions.get(session).unwatch(window)
+    })
+
+    context.answer("session.acknowledge", ({ payload }) => {
+        const { session, window, characters } = contract.acknowledge.parse(payload)
+        sessions.get(session).acknowledge(window, characters)
+    })
+
+    // For agents and others who read a session rather than show it.
+    context.answer("session.text", async ({ payload }) => sessions.get(contract.session.parse(payload).session).text())
+
+    context.answer("session.read", ({ payload }) => {
+        const { session, after, limit } = contract.read.parse(payload)
+        return sessions.get(session).read(after, limit)
+    })
 }
 
-async function clientIdentity(endpoint: Endpoint | null) {
-  if (!endpoint) throw new Error("This terminal operation requires a Client")
+/** Remembered once the Terminal has recorded its start with the System. */
+const startupRecorded = "startup.recorded"
 
-  const process = await endpoint.process()
-  if (endpoint !== process.client) throw new Error("This terminal operation requires a Client")
-  return process.identity
-}
-
-async function exitClient(identity: string) {
-  const process = await system.process.find(identity)
-  if (!process || !await process.client.running()) return
-
-  if (await process.server.running()) await process.client.stop()
-  else await process.exit()
+/**
+ * The Service starts with the System, so other Programs find it present. The Terminal records that
+ * once; an owner who removes the record keeps it removed.
+ */
+async function startWithTheSystem(program: Awaited<ReturnType<typeof context.program>>) {
+    if (await program.store.get<boolean>(startupRecorded)) return
+    await program.startup.set(terminalService)
+    await program.store.set(startupRecorded, true)
 }

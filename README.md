@@ -1,6 +1,6 @@
 # Terminal
 
-The PhreshOS Program for real host PTY sessions.
+The PhreshOS Program for shell sessions on the machine, shown as tabs.
 
 [Programs](https://docs.phreshos.com/runtime/programs) ·
 [Communication](https://docs.phreshos.com/runtime/communication) ·
@@ -8,14 +8,20 @@ The PhreshOS Program for real host PTY sessions.
 
 ## Role
 
-Terminal exposes host PTY sessions to people and other Programs through the
-standard Program boundary. Its Server owns Sessions, PTY processes, input,
-resizing, and authoritative output history; its Client renders and interacts
-with those Sessions through xterm.js.
+Terminal runs shells on the machine through `node-pty` and shows them with
+xterm.js. Every session lives in one Server, the `terminal` Service, which
+starts with the System; windows are Clients that show the sessions attached to
+them. A session belongs to the machine, not to a window: closing a window
+leaves its sessions running, and the "+" menu of any window brings them back.
 
-Shell execution remains inside the Server Endpoint. The Desktop owns only the
-Window representing the Client, and a Client-lifecycle Session closes with its
-associated Client Endpoint.
+The Server keeps each session's screen in a headless terminal, so a window
+takes it as it is, then follows its output in numbered batches. A shell that
+writes faster than the window draws waits for it.
+
+Other Programs reach Terminal through the `terminal` Service, such as Files
+opening a folder in it; Terminal shows a folder in Files through the `files`
+Service, when a Program offers it. Agents use the same Service:
+[`agent.md`](agent.md) describes it.
 
 ## Installation
 
@@ -41,8 +47,7 @@ bun run start
 bun run pack
 ```
 
-`verify` checks the PTY contract, builds both Endpoints, and validates the
-production Program artifact.
+`verify` checks the types, builds both Endpoints, and tests the sessions.
 
 `check` performs static checks, `build` creates distributable output, and `test`
 runs Vitest assertions from `tests/`. Run `build` before testing built artifacts.

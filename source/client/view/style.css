@@ -1,65 +1,52 @@
 :root {
-  font-family: "SFMono-Regular", "Cascadia Code", "Liberation Mono", monospace;
-  font-synthesis: none;
+    background: transparent;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
 }
 
 * { box-sizing: border-box; }
 
 html,
 body {
-  width: 100%;
-  height: 100%;
-  min-width: 0;
-  min-height: 0;
-  margin: 0;
-  overflow: hidden;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: transparent;
 }
 
-button { font: inherit; }
+/* The window: its own header, the screen, and the status line under it. */
+.terminal-window { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; height: 100%; min-width: 0; }
 
-.terminal-readiness-stage,
-.terminal-readiness-content,
-.terminal-body,
-.terminal-state {
-  width: 100%;
-  height: 100%;
-  min-width: 0;
-  min-height: 0;
-}
+/* The screen: a recessed well, the terminal inside it with an even inset. */
+.screen { margin: 0 0.5rem; min-height: 0; border-radius: 10px; overflow: hidden; }
+.screen-terminal { height: 100%; }
+/* The inset belongs to the terminal itself: xterm fits its rows to its parent's height less the
+   terminal's own padding, so padding on the parent would count rows that do not fit. */
+.screen-terminal .xterm { height: 100%; padding: 0.625rem 0 0.625rem 0.75rem; }
+/* The terminal shows no scrollbar, neither xterm's own nor the browser's on its viewport, which a
+   system set to always show scrollbars would draw; the wheel and the trackpad scroll it. */
+.screen-terminal .xterm .xterm-scrollable-element > .scrollbar { display: none; }
+.screen-terminal .xterm .xterm-viewport { scrollbar-width: none; }
+/* xterm's stylesheet paints its viewport black, for an opaque scrollbar on macOS; the theme's
+   background reaches only the layer above it. The terminal lies on the well, so both are clear. */
+.screen-terminal .xterm .xterm-viewport,
+.screen-terminal .xterm .composition-view { background-color: transparent; }
+.screen-empty { margin: 0 0.5rem; }
 
-.terminal-readiness-stage { position: relative; }
-.terminal-initial-loading { position: absolute; inset: 0; }
+.entry-text { display: grid; gap: 0.125rem; min-width: 0; flex: 1 1 auto; line-height: 1.25; }
+.entry-text small { font-size: 0.6875rem; opacity: 0.55; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.terminal-body {
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-}
+.dot { width: 7px; height: 7px; border-radius: 50%; flex: none; display: inline-block; }
 
-.terminal-body .xterm {
-  padding: 0.4rem;
-}
+.tab { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0.4rem; flex: 1 1 auto; min-width: 0; }
+.tab-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: start; }
+.tab-close { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 4px; opacity: 0.45; cursor: pointer; }
+.tab-close:hover { opacity: 1; background: color-mix(in oklab, currentColor 12%, transparent); }
 
-.terminal-body .scrollbar { display: none !important; }
+.status-line { display: flex; align-items: center; gap: 1rem; min-width: 0; padding: 0.4rem 0.875rem 0.5rem; font-size: 0.75rem; }
+.status-part { display: inline-flex; align-items: center; gap: 0.35rem; opacity: 0.62; white-space: nowrap; }
+.status-spacer { flex: 1 1 auto; }
 
-.terminal-body .xterm-viewport { scrollbar-width: none; }
-
-.terminal-body .xterm-viewport::-webkit-scrollbar { display: none; }
-
-.terminal-state {
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem;
-  text-align: center;
-}
-
-.terminal-state p { margin: 0; }
-
-.terminal-state button {
-  padding: 0;
-  border: 0;
-  text-decoration: underline;
-  cursor: pointer;
-}
+.problem { display: grid; place-content: center; justify-items: center; gap: 0.75rem; height: 100%; }
