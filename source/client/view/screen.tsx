@@ -18,6 +18,13 @@ const acknowledgeEvery = 100
 const scrollbarRoom = 1
 
 /**
+ * The least contrast between text and the well, as VS Code's terminal keeps it: a program's own color
+ * too close to the background, such as dark green made for a light terminal shown on a dark one, is
+ * moved lighter or darker until it reads.
+ */
+const minimumContrast = 4.5
+
+/**
  * One session drawn as a terminal, on a well recessed into the window. It follows the session's
  * output from the moment it starts, takes the screen as it is, numbered, and continues from it; it
  * tells the Server how much it has drawn, so a shell writing faster than the screen draws waits for
@@ -46,6 +53,7 @@ export default function Screen({ session, window }: Readonly<{ session: string, 
             lineHeight: 1.25,
             scrollback: 10_000,
             allowTransparency: true,
+            minimumContrastRatio: minimumContrast,
             theme: themeOf.current
         })
         terminal.current = xterm
@@ -140,7 +148,8 @@ function useTheme(): ITheme {
     const muted = useColor("foreground").soft
     const selection = useColor("primary").soft
     return {
-        background: "rgba(0, 0, 0, 0)",
+        // The well shows through, but contrast is measured against its color, the Appearance's default.
+        background: unpainted(colors.default),
         // The column beside the rows is xterm's overview ruler; it draws no border.
         overviewRulerBorder: "rgba(0, 0, 0, 0)",
         foreground: colors.foreground,
@@ -164,6 +173,20 @@ function useTheme(): ITheme {
         brightCyan: colors.info,
         brightWhite: colors.foreground
     }
+}
+
+/**
+ * A color with nothing of it painted: xterm draws the background transparent and still measures
+ * contrast against its red, green, and blue. A one-pixel canvas reads any CSS color as those three.
+ */
+function unpainted(color: string) {
+    const canvas = document.createElement("canvas")
+    canvas.width = canvas.height = 1
+    const context = canvas.getContext("2d", { willReadFrequently: true })!
+    context.fillStyle = color
+    context.fillRect(0, 0, 1, 1)
+    const [red, green, blue] = context.getImageData(0, 0, 1, 1).data
+    return `rgba(${red}, ${green}, ${blue}, 0)`
 }
 
 /** Draws with WebGL where the browser offers it, and falls back to the default renderer if its context is lost. */
