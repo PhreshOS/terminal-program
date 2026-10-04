@@ -30,11 +30,13 @@ const minimumContrast = 4.5
  * tells the Server how much it has drawn, so a shell writing faster than the screen draws waits for
  * it. A gap in the numbers takes the screen again.
  */
-export default function Screen({ session, window }: Readonly<{ session: string, window: string }>) {
+export default function Screen({ session, window, onDrawn }: Readonly<{ session: string, window: string, onDrawn?: () => void }>) {
     const element = useRef<HTMLDivElement>(null)
     const terminal = useRef<Terminal | null>(null)
     const theme = useTheme()
     const themeOf = useRef(theme)
+    const onDrawnOf = useRef(onDrawn)
+    onDrawnOf.current = onDrawn
 
     // The theme follows the Appearance without starting the session over. This effect comes first, so
     // a terminal made below starts with the theme of the moment.
@@ -107,6 +109,7 @@ export default function Screen({ session, window }: Readonly<{ session: string, 
             if (!active) { stopOutput(); return }
             await take()
             fit.fit()
+            onDrawnOf.current?.()
         })().catch(error => xterm.write(`\r\n\x1b[31m${messageOf(error)}\x1b[0m\r\n`))
 
         const input = xterm.onData(data => { void ask("session.write", { session, data }).catch(error => xterm.write(`\r\n\x1b[31m${messageOf(error)}\x1b[0m\r\n`)) })

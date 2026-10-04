@@ -8,6 +8,7 @@ import { FolderOpen, Plus, Server, SquareTerminal, X } from "@phreshos/react-ui/
 import { useEffect, useRef, useState } from "react"
 import icon from "@/icon.png"
 import { filesService } from "@shared/service"
+import { useFirstArrival } from "./readiness"
 import Screen from "./screen"
 
 /**
@@ -61,6 +62,11 @@ export default function TerminalWindow({ window: me }: Readonly<{ window: string
     const window = useWindowState(context.window)
     const toggleMaximize = async () => context.window.maximize(!await context.window.maximized())
 
+    // The window's initial state is its sessions and the first screen drawn; a problem reaching the
+    // Server is shown as it is. Screens drawn later, for another tab, appear in place.
+    const [drawn, setDrawn] = useState(false)
+    useFirstArrival(initial.exception !== undefined || (sessions !== null && drawn))
+
     if (initial.exception) return <div className="problem">
         <p>The Terminal could not reach its Server.</p>
         <Button onPress={() => initial.execute()}>Try again</Button>
@@ -98,7 +104,7 @@ export default function TerminalWindow({ window: me }: Readonly<{ window: string
                 <Window.Header.Close preventFocusOnPress={false} onPress={() => void context.process().then(process => process.exit())} />
             </Window.Header.Actions>
         </Window.Header>
-        {current ? <Screen key={current.session} session={current.session} window={me} /> : <div className="screen-empty" />}
+        {current ? <Screen key={current.session} session={current.session} window={me} onDrawn={() => setDrawn(true)} /> : <div className="screen-empty" />}
         {current && <StatusLine session={current} />}
     </div>
 }
