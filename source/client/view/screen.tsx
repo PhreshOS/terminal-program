@@ -151,7 +151,7 @@ function useTheme(): ITheme {
     const muted = useColor("foreground").soft
     const selection = useColor("primary").soft
     return {
-        // The well shows through, but contrast and dimmed text are measured against its color, the Appearance's default.
+        // The well shows through, but contrast is measured against its color, the Appearance's default.
         background: unpainted(colors.default),
         // The column beside the rows is xterm's overview ruler; it draws no border.
         overviewRulerBorder: "rgba(0, 0, 0, 0)",
@@ -179,10 +179,8 @@ function useTheme(): ITheme {
 }
 
 /**
- * The well's color, all but unpainted: xterm measures contrast against its red, green, and blue, and
- * the WebGL renderer blends dimmed text onto it. Fully transparent, that blend comes out as black
- * boxes behind dimmed text, so it keeps a hundredth of the color, which no one can see. A one-pixel
- * canvas reads any CSS color as its three channels.
+ * A color with nothing of it painted: xterm draws the background transparent and still measures
+ * contrast against its red, green, and blue. A one-pixel canvas reads any CSS color as those three.
  */
 function unpainted(color: string) {
     const canvas = document.createElement("canvas")
@@ -191,7 +189,7 @@ function unpainted(color: string) {
     context.fillStyle = color
     context.fillRect(0, 0, 1, 1)
     const [red, green, blue] = context.getImageData(0, 0, 1, 1).data
-    return `rgba(${red}, ${green}, ${blue}, 0.01)`
+    return `rgba(${red}, ${green}, ${blue}, 0)`
 }
 
 /** Draws with WebGL where the browser offers it, and falls back to the default renderer if its context is lost. */
