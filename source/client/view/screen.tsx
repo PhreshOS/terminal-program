@@ -4,7 +4,7 @@ import { FitAddon } from "@xterm/addon-fit"
 import { WebglAddon } from "@xterm/addon-webgl"
 import { Terminal, type ITheme } from "@xterm/xterm"
 import "@xterm/xterm/css/xterm.css"
-import { useEffect, useLayoutEffect, useRef, useState } from "react"
+import { useEffect, useRef } from "react"
 
 /** How often a window tells the Server how far it has drawn. */
 const acknowledgeEvery = 100
@@ -33,8 +33,7 @@ const minimumContrast = 4.5
 export default function Screen({ session, window, onDrawn }: Readonly<{ session: string, window: string, onDrawn?: () => void }>) {
     const element = useRef<HTMLDivElement>(null)
     const terminal = useRef<Terminal | null>(null)
-    const well = useWellColor(element)
-    const theme = useTheme(well)
+    const theme = useTheme()
     const themeOf = useRef(theme)
     const onDrawnOf = useRef(onDrawn)
     onDrawnOf.current = onDrawn
@@ -147,13 +146,13 @@ export default function Screen({ session, window, onDrawn }: Readonly<{ session:
  * and its named colors for the sixteen a shell uses. xterm reads only concrete colors, so the dimmed
  * ones are the Appearance's own concrete levels rather than mixes.
  */
-function useTheme(well: string | null): ITheme {
+function useTheme(): ITheme {
     const colors = useThemedValue(useAppearance().colors)
     const muted = useColor("foreground").soft
     const selection = useColor("primary").soft
     return {
-        // The well shows through, but contrast and dimmed text are measured against its own color.
-        background: unpainted(well ?? colors.default),
+        // The well shows through, but contrast and dimmed text are measured against its color, the Appearance's default.
+        background: unpainted(colors.default),
         // The column beside the rows is xterm's overview ruler; it draws no border.
         overviewRulerBorder: "rgba(0, 0, 0, 0)",
         foreground: colors.foreground,
@@ -193,23 +192,6 @@ function unpainted(color: string) {
     context.fillRect(0, 0, 1, 1)
     const [red, green, blue] = context.getImageData(0, 0, 1, 1).data
     return `rgba(${red}, ${green}, ${blue}, 0.01)`
-}
-
-/**
- * The color the well is painted with, read from the well itself after each change of the Appearance:
- * the text sits on it, so whatever xterm draws behind dimmed text must be this color, not the window's.
- * Until it is painted, it is unknown.
- */
-function useWellColor(terminal: { readonly current: HTMLElement | null }) {
-    const colors = useThemedValue(useAppearance().colors)
-    const [well, setWell] = useState<string | null>(null)
-    useLayoutEffect(() => {
-        const surface = terminal.current?.parentElement
-        if (!surface) return
-        const painted = getComputedStyle(surface, "::before").backgroundColor
-        setWell(painted && painted !== "rgba(0, 0, 0, 0)" ? painted : null)
-    }, [terminal, colors])
-    return well
 }
 
 /** Draws with WebGL where the browser offers it, and falls back to the default renderer if its context is lost. */
