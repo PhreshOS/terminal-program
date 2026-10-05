@@ -1,5 +1,5 @@
 import { ask, followOutput, type Output, type Snapshot } from "@client/core/terminal-server"
-import { Surface, useAppearance, useColor, useThemedValue } from "@phreshos/react-ui"
+import { Surface, useAppearance, useColor, useSurfaceColor, useThemedValue } from "@phreshos/react-ui"
 import { FitAddon } from "@xterm/addon-fit"
 import { WebglAddon } from "@xterm/addon-webgl"
 import { Terminal, type ITheme } from "@xterm/xterm"
@@ -150,9 +150,11 @@ function useTheme(): ITheme {
     const colors = useThemedValue(useAppearance().colors)
     const muted = useColor("foreground").soft
     const selection = useColor("primary").soft
+    // The text sits on the well: programs that ask what the terminal stands on, and the contrast kept
+    // for their colors, take the well's color, while the well itself, with its material, shows through.
+    const well = useSurfaceColor("background", "recessed")
     return {
-        // The well shows through, but contrast is measured against its color, the Appearance's default.
-        background: unpainted(colors.default),
+        background: unpainted(well),
         // The column beside the rows is xterm's overview ruler; it draws no border.
         overviewRulerBorder: "rgba(0, 0, 0, 0)",
         foreground: colors.foreground,
