@@ -10,9 +10,9 @@ The PhreshOS Program for shell sessions on the machine, shown as tabs.
 
 Terminal runs shells on the machine through `node-pty` and shows them with
 xterm.js. Every session lives in one Server, the `terminal` Service, which
-starts with the System; windows are Clients that show the sessions attached to
-them. A session belongs to the machine, not to a window: closing a window
-leaves its sessions running, and the "+" menu of any window brings them back.
+starts with the System; windows are Clients that show their own sessions. A
+session belongs to the window that started it: "+" starts another, and closing
+the window ends them.
 
 The Server keeps each session's screen in a headless terminal, so a window
 takes it as it is, then follows its output in numbered batches. A shell that

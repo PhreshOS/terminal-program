@@ -54,25 +54,24 @@ test("a watcher that lags far behind pauses the shell until it catches up", asyn
     session.write("\x03")
 })
 
-test("a window's end detaches its sessions, and another window can take them", async () => {
+test("a window's end ends its sessions, and only its own", async () => {
     const open = new Set(["first", "second"])
     const { windows, end } = fakeWindows(open)
     const sessions = new Sessions(windows)
-    const created = await sessions.create("first", { cols: 80, rows: 24 })
-    opened.push({ close: () => { try { sessions.close(created.session) } catch { /* already ended */ } } })
-    expect(sessions.list()[0].window).toBe("first")
+    const first = await sessions.create("first", { cols: 80, rows: 24 })
+    const second = await sessions.create("second", { cols: 80, rows: 24 })
+    opened.push({ close: () => { try { sessions.close(second.session) } catch { /* already ended */ } } })
     end("first")
-    expect(sessions.list()[0].window).toBeNull()
-    await sessions.attach(created.session, "second")
-    expect(sessions.list()[0].window).toBe("second")
+    await until(() => sessions.list().length === 1)
+    expect(sessions.list()[0].session).toBe(second.session)
+    expect(() => sessions.get(first.session)).toThrow()
 })
 
-test("a session attached to a window that already ended runs on, detached", async () => {
+test("a session started for a window that already ended ends at once", async () => {
     const { windows } = fakeWindows(new Set())
     const sessions = new Sessions(windows)
-    const created = await sessions.create("gone", { cols: 80, rows: 24 })
-    opened.push({ close: () => { try { sessions.close(created.session) } catch { /* already ended */ } } })
-    expect(sessions.list()[0].window).toBeNull()
+    await sessions.create("gone", { cols: 80, rows: 24 })
+    await until(() => sessions.list().length === 0)
 })
 
 test("an ended session leaves the list", async () => {

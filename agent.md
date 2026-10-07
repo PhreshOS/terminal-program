@@ -1,8 +1,7 @@
 # Terminal
 
 Terminal runs shell sessions on the machine and shows them as tabs. A session
-belongs to the machine, not to a window: when its window closes it keeps
-running, detached, until a window takes it again or it is ended.
+belongs to the window that started it, and ends when that window closes.
 
 Every session lives in one Server: the Process named `terminal`, Server only,
 which is also the `terminal` Service. It starts with the System. Terminal
@@ -20,7 +19,7 @@ Never start another Server, and never give a window Process a Server.
 
 1. `sessions.list` returns every session: `{ session, title, shell, cwd, cols,
    rows, state, createdAt, window }`. `window` is the identity of the window
-   Process showing it, or `null` while it runs detached. `state` is `running`
+   Process it belongs to. `state` is `running`
    while a command runs in front, `idle` while the shell waits.
 2. Type with `session.write` `{ session, data }`. End a command line with `\r`.
 3. Read the screen with `session.text` `{ session }`: the whole screen and its
@@ -46,16 +45,14 @@ owner sees what you do.
 | --- | --- | --- |
 | `session.close` | `{ session }` | Ends the shell |
 | `session.resize` | `{ session, cols, rows }` | Resizes the shell and its screen |
-| `session.attach` | `{ session, window }` | Shows a session in a window |
-| `session.detach` | `{ session }` | Leaves it running in no window |
 
 `session.create`, `session.watch`, `session.unwatch`, and `session.acknowledge`
 belong to Terminal windows.
 
 ## Publications
 
-- `sessions.changed`: the whole list, whenever a session starts, ends, moves
-  between windows, or changes its title or state.
+- `sessions.changed`: the whole list, whenever a session starts, ends, or
+  changes its title or state.
 - `output.<session>`: `{ sequence, data }`, that session's output in order.
 
 Sessions live in the Server's memory: when it ends, or the System restarts,

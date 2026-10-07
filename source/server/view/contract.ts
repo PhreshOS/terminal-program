@@ -11,7 +11,6 @@ const size = { cols: z.number().int().min(2).max(1000), rows: z.number().int().m
 export const contract = {
     open: z.object({ cwd: folder, position: z.object({ x: value, y: value }).optional() }),
     create: z.object({ window: identity, ...size, cwd: folder.optional() }),
-    attach: z.object({ session: identity, window: identity }),
     session: z.object({ session: identity }),
     write: z.object({ session: identity, data: z.string().max(1024 * 1024) }),
     resize: z.object({ session: identity, ...size }),

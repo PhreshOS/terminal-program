@@ -1,7 +1,7 @@
 import Session, { type Output, type SessionDescription } from "./session"
 
-/** Where a session is shown: the window it is attached to, or none while it runs detached. */
-export type SessionEntry = SessionDescription & Readonly<{ window: string | null }>
+/** A session and the window it belongs to. */
+export type SessionEntry = SessionDescription & Readonly<{ window: string }>
 
 /** What the sessions know of windows, from wherever windows live. */
 export type Windows = Readonly<{
@@ -16,13 +16,12 @@ export type SessionsEvent =
     | Readonly<{ type: "output", session: string, output: Output }>
 
 /**
- * Every session on this machine. A session belongs here, not to a window: a window shows the
- * sessions attached to it, and when it ends they keep running, detached, until a window takes them
- * again or they are ended.
+ * Every session on this machine. Each belongs to the window that started it and ends with it: whoever
+ * wants a shell to keep running keeps its window open.
  */
 export default class Sessions {
     private readonly sessions = new Map<string, Session>()
-    private readonly attached = new Map<string, string | null>()
+    private readonly windowOf = new Map<string, string>()
     private readonly listeners = new Set<(event: SessionsEvent) => void>()
 
     public constructor(private readonly windows: Windows) {
@@ -38,37 +37,21 @@ export default class Sessions {
         return [...this.sessions.values()].map(session => this.entry(session))
     }
 
-    /** Starts a session attached to a window. */
+    /** Starts a session that belongs to a window. */
     public async create(window: string, options: Readonly<{ cols: number, rows: number, cwd?: string }>) {
         const session = new Session(options)
         this.sessions.set(session.identity, session)
-        this.attached.set(session.identity, window)
+        this.windowOf.set(session.identity, window)
         session.subscribe(event => {
             if (event.type === "output") this.emit({ type: "output", session: session.identity, output: event.output })
             else if (event.type === "exit") this.remove(session.identity)
             else this.emit({ type: "changed" })
         })
-        await this.settle(window)
-        this.emit({ type: "changed" })
-        return this.entry(session)
-    }
-
-    /** Shows a session in a window; it leaves whichever window showed it before. */
-    public async attach(identity: string, window: string) {
-        const session = this.get(identity)
-        const before = this.attached.get(identity)
-        if (before && before !== window) session.unwatch(before)
-        this.attached.set(identity, window)
-        await this.settle(window)
-        this.emit({ type: "changed" })
-        return this.entry(session)
-    }
-
-    /** The session keeps running with no window showing it. */
-    public detach(identity: string) {
-        this.get(identity).unwatch(this.attached.get(identity) ?? "")
-        this.attached.set(identity, null)
-        this.emit({ type: "changed" })
+        const entry = this.entry(session)
+        // A window that ended before its session reached it takes the session with it.
+        if (!await this.windows.exists(window)) this.windowEnded(window)
+        else this.emit({ type: "changed" })
+        return entry
     }
 
     public get(identity: string) {
@@ -81,31 +64,19 @@ export default class Sessions {
         this.get(identity).close()
     }
 
-    /** A window ended: its sessions run on, detached. */
+    /** A window ended: so do its sessions. */
     private windowEnded(window: string) {
-        let changed = false
-        for (const [identity, shown] of this.attached) {
-            if (shown !== window) continue
-            this.sessions.get(identity)?.unwatch(window)
-            this.attached.set(identity, null)
-            changed = true
-        }
-        if (changed) this.emit({ type: "changed" })
-    }
-
-    /** A window that ended before its session reached it leaves the session detached at once. */
-    private async settle(window: string) {
-        if (!await this.windows.exists(window)) this.windowEnded(window)
+        for (const [identity, owner] of this.windowOf) if (owner === window) this.sessions.get(identity)?.close()
     }
 
     private remove(identity: string) {
         this.sessions.delete(identity)
-        this.attached.delete(identity)
+        this.windowOf.delete(identity)
         this.emit({ type: "changed" })
     }
 
     private entry(session: Session): SessionEntry {
-        return Object.freeze({ ...session.description(), window: this.attached.get(session.identity) ?? null })
+        return Object.freeze({ ...session.description(), window: this.windowOf.get(session.identity)! })
     }
 
     private emit(event: SessionsEvent) {

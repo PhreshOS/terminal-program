@@ -35,8 +35,6 @@ body {
 .screen-terminal .xterm .composition-view { background-color: transparent; }
 .screen-empty { margin: 0 0.5rem; }
 
-.entry-text { display: grid; gap: 0.125rem; min-width: 0; flex: 1 1 auto; line-height: 1.25; }
-.entry-text small { font-size: 0.6875rem; opacity: 0.55; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; display: inline-block; }
 

@@ -40,13 +40,6 @@ export default async function view() {
         return sessions.create(window, options)
     })
 
-    context.answer("session.attach", ({ payload }) => {
-        const { session, window } = contract.attach.parse(payload)
-        return sessions.attach(session, window)
-    })
-
-    context.answer("session.detach", ({ payload }) => sessions.detach(contract.session.parse(payload).session))
-
     context.answer("session.close", ({ payload }) => sessions.close(contract.session.parse(payload).session))
 
     context.answer("session.write", ({ payload }) => {

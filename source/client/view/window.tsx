@@ -3,8 +3,8 @@ import { ask, followSessions, type SessionEntry } from "@client/core/terminal-se
 import usePromise from "@libs/react-promise"
 import { context } from "@phreshos/client"
 import { useWindowState } from "@phreshos/react"
-import { Badge, Button, DropdownMenu, Menu, Tabs, Window, useAppearance, useThemedValue } from "@phreshos/react-ui"
-import { FolderOpen, Plus, Server, SquareTerminal, X } from "@phreshos/react-ui/icons"
+import { Button, Tabs, Window, useAppearance, useThemedValue } from "@phreshos/react-ui"
+import { FolderOpen, Plus, Server, X } from "@phreshos/react-ui/icons"
 import { useEffect, useRef, useState } from "react"
 import icon from "@/icon.png"
 import { filesService } from "@shared/service"
@@ -21,9 +21,9 @@ const tabWidth = { width: "10.5rem", maxWidth: "100%", justifyContent: "flex-sta
 const startingSize = { cols: 100, rows: 30 }
 
 /**
- * The Terminal as a window. Its tabs are the sessions attached to it; closing a tab ends that
- * session. Closing the window ends none of them: they run on, detached, and the "+" menu offers
- * them to any window. A new window starts with a new session, and closing its last tab closes it.
+ * The Terminal as a window. Its tabs are its own sessions: "+" starts one, closing a tab ends it, and
+ * closing the window ends them all. A new window starts with a new session, and closing its last tab
+ * closes it.
  */
 export default function TerminalWindow({ window: me }: Readonly<{ window: string }>) {
     const initial = usePromise(() => ask<readonly SessionEntry[]>("sessions.list"), [])
@@ -32,17 +32,12 @@ export default function TerminalWindow({ window: me }: Readonly<{ window: string
     const sessions = followed ?? initial.solve ?? null
 
     const mine = sessions?.filter(session => session.window === me) ?? []
-    const detached = sessions?.filter(session => session.window === null) ?? []
     const [chosen, setChosen] = useState<string | null>(null)
     const current = mine.find(session => session.session === chosen) ?? mine.at(-1) ?? null
 
     const start = usePromise(async (cwd?: string) => {
         const created = await ask<SessionEntry>("session.create", { window: me, ...startingSize, ...(cwd ? { cwd } : {}) })
         setChosen(created.session)
-    })
-    const take = usePromise(async (session: string) => {
-        await ask("session.attach", { session, window: me })
-        setChosen(session)
     })
 
     // A new window starts with a session of its own, in the folder it was opened for, if any; once it
@@ -93,7 +88,7 @@ export default function TerminalWindow({ window: me }: Readonly<{ window: string
                         </Tabs.Tab>)}
                     </Tabs.List>
                 </Tabs>}
-                <NewSession detached={detached} onNew={() => void start.safeExecute()} onTake={session => void take.safeExecute(session)} />
+                <Button iconOnly depth="none" size="small" aria-label="New session" onPress={() => void start.safeExecute()}><Plus /></Button>
             </Window.Header.Center>
             <Window.Header.Actions>
                 {/* Shown while a Program offers the "files" Service, such as Files. */}
@@ -109,31 +104,12 @@ export default function TerminalWindow({ window: me }: Readonly<{ window: string
     </div>
 }
 
-/** Starts a session on this machine, or brings a running one into this window. */
-function NewSession({ detached, onNew, onTake }: Readonly<{ detached: readonly SessionEntry[], onNew: () => void, onTake: (session: string) => void }>) {
-    return <DropdownMenu>
-        <DropdownMenu.Trigger iconOnly depth="none" size="small" aria-label="New session"><Plus /></DropdownMenu.Trigger>
-        <DropdownMenu.Content>
-            <Menu aria-label="New session" size="small" onAction={key => key === "new" ? onNew() : onTake(String(key))}>
-                <Menu.Item id="new" textValue="This machine" style={{ paddingBlock: "0.25rem", gap: "0.75rem" }}>
-                    <Server /><span className="entry-text">This machine<small>a new shell</small></span>
-                </Menu.Item>
-                {detached.length > 0 && <Menu.Separator />}
-                {detached.map(session => <Menu.Item key={session.session} id={session.session} textValue={session.title} style={{ paddingBlock: "0.25rem", gap: "0.75rem" }}>
-                    <SquareTerminal /><span className="entry-text">{session.title}<small>running, in no window</small></span>
-                </Menu.Item>)}
-            </Menu>
-        </DropdownMenu.Content>
-    </DropdownMenu>
-}
-
-/** What the current session is, and that it outlives this window. */
+/** What the current session is. */
 function StatusLine({ session }: Readonly<{ session: SessionEntry }>) {
     return <div className="status-line">
         <span className="status-part"><Server size={13} />This machine</span>
         <span className="status-part">{session.shell.split("/").at(-1)} · {session.cols}×{session.rows}</span>
         <span className="status-spacer" />
-        <Badge size="small">Keeps running when the window closes</Badge>
         <span className="status-part">{session.state === "running" ? `running ${session.title}` : "ready"}</span>
     </div>
 }
