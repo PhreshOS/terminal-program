@@ -1,13 +1,12 @@
-import { besideThisWindow, useService } from "@client/core/services"
+import { folderAddress, folderOf } from "@client/core/opening"
 import { ask, followSessions, type SessionEntry } from "@client/core/terminal-server"
 import usePromise from "@libs/react-promise"
-import { context } from "@phreshos/client"
+import { context, system } from "@phreshos/client"
 import { useWindowState } from "@phreshos/react"
 import { Button, Tabs, Window, useAppearance, useThemedValue } from "@phreshos/react-ui"
 import { FolderOpen, Plus, Server, X } from "@phreshos/react-ui/icons"
 import { useEffect, useRef, useState } from "react"
 import icon from "@/icon.png"
-import { filesService } from "@shared/service"
 import { useFirstArrival } from "./readiness"
 import Screen from "./screen"
 
@@ -40,20 +39,20 @@ export default function TerminalWindow({ window: me }: Readonly<{ window: string
         setChosen(created.session)
     })
 
-    // A new window starts with a session of its own, in the folder it was opened for, if any; once it
-    // has had sessions, losing the last closes it.
+    // A new window starts with a session of its own, in the folder it was opened for, if any: by its
+    // options, or by a terminal: address it was opened with. Once it has had sessions, losing the last
+    // closes it.
     const started = useRef(false)
     useEffect(() => {
         if (sessions === null) return
         if (mine.length > 0) { started.current = true; return }
         if (!started.current) {
             started.current = true
-            void context.options("cwd").then(cwd => start.safeExecute(cwd ?? undefined))
+            void Promise.all([context.options("cwd"), context.opened()]).then(([cwd, opened]) => start.safeExecute(cwd ?? folderOf(opened)))
         }
         else void context.process().then(process => process.exit())
     }, [sessions, mine.length])
 
-    const files = useService(filesService)
     const window = useWindowState(context.window)
     const toggleMaximize = async () => context.window.maximize(!await context.window.maximized())
 
@@ -91,9 +90,9 @@ export default function TerminalWindow({ window: me }: Readonly<{ window: string
                 <Button iconOnly depth="none" size="small" aria-label="New session" onPress={() => void start.safeExecute()}><Plus /></Button>
             </Window.Header.Center>
             <Window.Header.Actions>
-                {/* Shown while a Program offers the "files" Service, such as Files. */}
-                {files && <Window.Header.Action iconOnly aria-label="Show the session's folder in Files" disabled={!current}
-                    onPress={() => current && void besideThisWindow().then(position => files.ask("path.show", { path: current.cwd, ...(position ? { position } : {}) }))}><FolderOpen /></Window.Header.Action>}
+                {/* The folder opens with whatever the owner opens folders with, such as Files. */}
+                <Window.Header.Action iconOnly aria-label="Show the session's folder" disabled={!current}
+                    onPress={() => current && void system.open({ type: "inode/directory", uri: folderAddress(current.cwd) }).catch(() => undefined)}><FolderOpen /></Window.Header.Action>
                 <Window.Header.Minimize preventFocusOnPress={false} onPress={() => void context.window.minimize()} />
                 <Window.Header.Maximize />
                 <Window.Header.Close preventFocusOnPress={false} onPress={() => void context.process().then(process => process.exit())} />

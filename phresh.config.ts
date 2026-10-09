@@ -12,8 +12,8 @@ export default defineConfig({
   website: "https://github.com/PhreshOS/terminal-program",
   agent: "agent.md",
   buildCommand: "vite-node scripts/build.ts",
-  // A Terminal window shows a folder in Files through the "files" Service, when one is present.
-  permissions: { services: ["files"] },
+  // It opens a shell at a folder for any Program that asks, through a terminal: address.
+  opens: ["x-scheme-handler/terminal"],
   // One Server holds every session, in the Process named "terminal", which is the "terminal" Service.
   // Windows are Clients that reach it, so a session outlives the window that showed it.
   server: {

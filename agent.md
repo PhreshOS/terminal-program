@@ -39,6 +39,10 @@ Desktop's plane; without it the System places the window.
 Prefer a session someone already sees, or open one with `session.open`, so the
 owner sees what you do.
 
+Any Program can also open a shell at a folder without this Service, through
+the System: `system.open({ type: "x-scheme-handler/terminal", uri: "terminal:///absolute/folder" })`.
+It opens with the terminal the owner chose, and starts it if it is not running.
+
 ## Other questions
 
 | Event | Payload | Does |
