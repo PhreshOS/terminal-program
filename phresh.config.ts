@@ -4,7 +4,7 @@ export default defineConfig({
   identity: "terminal",
   name: "Terminal",
   description: "Shell sessions that keep running on the machine, shown as tabs, for people and agents.",
-  version: "0.4.1",
+  version: "0.5.0",
   // Drawn from icon.svg: an apricot screen, and on its dark soil a prompt whose cursor is a sprout.
   icon: "icon.png",
   categories: ["System", "Development"],
