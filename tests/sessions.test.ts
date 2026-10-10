@@ -37,6 +37,23 @@ test("a session's output leaves in numbered batches, and its snapshot is the scr
     expect(await session.text()).toContain("two")
 })
 
+test("each output batch carries the size it was written at, and a resize ends the batch before it", async () => {
+    const session = new Session({ cols: 100, rows: 30, shell: "/bin/sh" })
+    opened.push(session)
+    const outputs: Output[] = []
+    session.subscribe(event => { if (event.type === "output") outputs.push(event.output) })
+    session.write("echo before\r")
+    await until(() => outputs.map(output => output.data).join("").includes("before"))
+    session.resize(60, 20)
+    session.write("echo after\r")
+    await until(() => outputs.map(output => output.data).join("").includes("after\r\n"))
+    const at = (text: string) => outputs.find(output => output.data.includes(text))!
+    expect([at("before").cols, at("before").rows]).toEqual([100, 30])
+    expect([at("after\r\n").cols, at("after\r\n").rows]).toEqual([60, 20])
+    // What was read back keeps its size too.
+    expect(session.read(0, 100).output.every(output => output.cols > 0 && output.rows > 0)).toBe(true)
+})
+
 test("a watcher that lags far behind pauses the shell until it catches up", async () => {
     const session = new Session({ cols: 80, rows: 24, shell: "/bin/sh" })
     opened.push(session)

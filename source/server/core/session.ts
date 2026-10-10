@@ -45,7 +45,8 @@ export type SessionDescription = Readonly<{
     createdAt: string
 }>
 
-export type Output = Readonly<{ sequence: number, data: string }>
+/** One batch of output, with the screen size it was written at: a resize first sends what came before it. */
+export type Output = Readonly<{ sequence: number, data: string, cols: number, rows: number }>
 
 export type Snapshot = Readonly<{ sequence: number, cols: number, rows: number, data: string }>
 
@@ -162,7 +163,7 @@ export default class Session {
         const available = this.kept.filter(output => output.sequence > after)
         const first = this.kept[0]?.sequence
         return Object.freeze({
-            output: available.slice(0, limit).map(({ sequence, data }) => ({ sequence, data })),
+            output: available.slice(0, limit).map(({ sequence, data, cols, rows }) => ({ sequence, data, cols, rows })),
             truncated: first !== undefined && after < first - 1,
             more: available.length > limit
         })
@@ -207,7 +208,7 @@ export default class Session {
         if (!this.pending) return
         const data = this.pending
         this.pending = ""
-        const output = { sequence: ++this.sequence, data }
+        const output = { sequence: ++this.sequence, data, cols: this.pty.cols, rows: this.pty.rows }
         const bytes = Buffer.byteLength(data)
         this.kept.push({ ...output, bytes })
         this.keptBytes += bytes
