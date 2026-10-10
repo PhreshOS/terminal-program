@@ -70,7 +70,7 @@ export default function TerminalWindow({ window: me }: Readonly<{ window: string
     return <div className="terminal-window">
         <Window.Header
             active={window?.front ?? true}
-            beginMoveGesture={start => context.presentation.beginMoveGesture(start)}
+            beginMoveGesture={context.presentation.beginMoveGesture}
             maximized={window?.maximized ?? false}
             onMaximize={() => void toggleMaximize()}
         >
