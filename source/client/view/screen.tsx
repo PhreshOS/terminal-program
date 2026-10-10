@@ -71,7 +71,6 @@ export default function Screen({ session, window, onDrawn }: Readonly<{ session:
         let acknowledgeTimer: ReturnType<typeof setTimeout> | undefined
         let waiting: Output[] | null = []
         let replaying = false
-        let refitting = 0
         let stopOutput: (() => void) | undefined
 
         const acknowledge = () => {
@@ -80,28 +79,23 @@ export default function Screen({ session, window, onDrawn }: Readonly<{ session:
             acknowledged = drawn
             void ask("session.acknowledge", { session, window, characters: drawn }).catch(() => undefined)
         }
-        // The screen takes a size the session had, to draw what was written at it: drawn, not asked for.
-        // A window sized anew asks before the session hears it, so output written at the earlier size
-        // can still arrive; drawn at another size, its lines would wrap where the shell never put them.
+        // The screen draws the session at the session's size: each output at the size it was written
+        // at, so its lines fall where the shell put them. A size taken from the session is drawn, never
+        // asked for; the window asks only when its own room changes. Two windows of one session, each
+        // asking back for its own size, would resize the shell without end.
         const sizeTo = (cols: number, rows: number) => {
-            if (cols === xterm.cols && rows === xterm.rows) return false
+            if (cols === xterm.cols && rows === xterm.rows) return
             replaying = true
             try { xterm.resize(cols, rows) } finally { replaying = false }
-            return true
-        }
-        // Back to the window's own size once what was written at another has been drawn.
-        const refit = () => {
-            refitting ||= requestAnimationFrame(() => { refitting = 0; if (active) fit.fit() })
         }
         const draw = (output: Output) => {
             if (output.sequence <= applied) return
             if (output.sequence !== applied + 1) { void take(); return }
             applied = output.sequence
-            const sized = sizeTo(output.cols, output.rows)
+            sizeTo(output.cols, output.rows)
             xterm.write(output.data, () => {
                 drawn += output.data.length
                 acknowledgeTimer ??= setTimeout(acknowledge, acknowledgeEvery)
-                if (sized) refit()
             })
         }
         // The screen as it is now, then whatever arrived meanwhile after it.
@@ -141,7 +135,6 @@ export default function Screen({ session, window, onDrawn }: Readonly<{ session:
         return () => {
             active = false
             cancelAnimationFrame(focusing)
-            cancelAnimationFrame(refitting)
             clearTimeout(acknowledgeTimer)
             observer.disconnect()
             input.dispose()
