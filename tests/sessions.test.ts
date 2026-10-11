@@ -13,14 +13,16 @@ function until(condition: () => boolean, timeout = 5000) {
     })
 }
 
-/** Windows that end only when the test says so. */
+/** Windows that end only when the test says so, and that remember being closed. */
 function fakeWindows(open: Set<string>) {
     let ended: (window: string) => void = () => undefined
+    const closed: string[] = []
     const windows: Windows = {
         followEnds(follow) { ended = follow },
-        async exists(window) { return open.has(window) }
+        async exists(window) { return open.has(window) },
+        async close(window) { closed.push(window); open.delete(window); ended(window) }
     }
-    return { windows, end(window: string) { open.delete(window); ended(window) } }
+    return { windows, closed, end(window: string) { open.delete(window); ended(window) } }
 }
 
 test("a session's output leaves in numbered batches, and its snapshot is the screen as it is", async () => {
@@ -91,10 +93,36 @@ test("a session started for a window that already ended ends at once", async () 
     await until(() => sessions.list().length === 0)
 })
 
-test("an ended session leaves the list", async () => {
-    const sessions = new Sessions(fakeWindows(new Set(["window"])).windows)
-    const created = await sessions.create("window", { cols: 80, rows: 24 })
-    sessions.close(created.session)
+test("an ended session leaves the list, and a window's last one closes the window", async () => {
+    const { windows, closed } = fakeWindows(new Set(["window"]))
+    const sessions = new Sessions(windows)
+    const first = await sessions.create("window", { cols: 80, rows: 24 })
+    const second = await sessions.create("window", { cols: 80, rows: 24 })
+    sessions.close(first.session)
+    await until(() => sessions.list().length === 1)
+    expect(closed).toEqual([])
+    sessions.close(second.session)
     await until(() => sessions.list().length === 0)
-    expect(() => sessions.get(created.session)).toThrow()
+    expect(() => sessions.get(second.session)).toThrow()
+    await until(() => closed.length === 1)
+    expect(closed).toEqual(["window"])
+})
+
+test("a window begins with one session however many times its beginning is heard", async () => {
+    const { windows } = fakeWindows(new Set(["window"]))
+    const sessions = new Sessions(windows)
+    await Promise.all([sessions.begin("window", { cols: 80, rows: 24 }), sessions.begin("window", { cols: 80, rows: 24 })])
+    await sessions.begin("window", { cols: 80, rows: 24 })
+    expect(sessions.list().filter(entry => entry.window === "window")).toHaveLength(1)
+    for (const entry of sessions.list()) opened.push({ close: () => { try { sessions.close(entry.session) } catch { /* already ended */ } } })
+})
+
+test("a window that ends is not closed again by its sessions ending with it", async () => {
+    const open = new Set(["window"])
+    const { windows, closed, end } = fakeWindows(open)
+    const sessions = new Sessions(windows)
+    await sessions.begin("window", { cols: 80, rows: 24 })
+    end("window")
+    await until(() => sessions.list().length === 0)
+    expect(closed).toEqual([])
 })

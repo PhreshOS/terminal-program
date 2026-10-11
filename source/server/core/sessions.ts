@@ -9,6 +9,8 @@ export type Windows = Readonly<{
     followEnds(ended: (window: string) => void): void
     /** Whether a window is still open. */
     exists(window: string): Promise<boolean>
+    /** Closes a window. */
+    close(window: string): Promise<void>
 }>
 
 export type SessionsEvent =
@@ -17,11 +19,15 @@ export type SessionsEvent =
 
 /**
  * Every session on this machine. Each belongs to the window that started it and ends with it: whoever
- * wants a shell to keep running keeps its window open.
+ * wants a shell to keep running keeps its window open. A window begins with a session of its own, and
+ * closes once its last one ends. Those are the window's, decided here once, however many Desktops
+ * show it.
  */
 export default class Sessions {
     private readonly sessions = new Map<string, Session>()
     private readonly windowOf = new Map<string, string>()
+    /** The open windows that have had a session: losing their last one closes them. */
+    private readonly begun = new Set<string>()
     private readonly listeners = new Set<(event: SessionsEvent) => void>()
 
     public constructor(private readonly windows: Windows) {
@@ -37,8 +43,15 @@ export default class Sessions {
         return [...this.sessions.values()].map(session => this.entry(session))
     }
 
+    /** A window began: it starts with a session of its own, once. */
+    public async begin(window: string, options: Readonly<{ cols: number, rows: number, cwd?: string }>) {
+        if (this.begun.has(window)) return
+        await this.create(window, options)
+    }
+
     /** Starts a session that belongs to a window. */
     public async create(window: string, options: Readonly<{ cols: number, rows: number, cwd?: string }>) {
+        this.begun.add(window)
         const session = new Session(options)
         this.sessions.set(session.identity, session)
         this.windowOf.set(session.identity, window)
@@ -66,13 +79,19 @@ export default class Sessions {
 
     /** A window ended: so do its sessions. */
     private windowEnded(window: string) {
+        this.begun.delete(window)
         for (const [identity, owner] of this.windowOf) if (owner === window) this.sessions.get(identity)?.close()
     }
 
     private remove(identity: string) {
+        const window = this.windowOf.get(identity)
         this.sessions.delete(identity)
         this.windowOf.delete(identity)
         this.emit({ type: "changed" })
+        // Its last session ended while the window stays open: the window closes too.
+        if (window === undefined || !this.begun.has(window) || [...this.windowOf.values()].includes(window)) return
+        this.begun.delete(window)
+        void this.windows.close(window).catch(() => undefined)
     }
 
     private entry(session: Session): SessionEntry {

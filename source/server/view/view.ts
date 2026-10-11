@@ -2,7 +2,11 @@ import { context } from "@phreshos/server"
 import Sessions, { type Windows } from "@server/core/sessions"
 import { outputEvent } from "@shared/events"
 import { terminalService } from "@shared/service"
+import { folderOf } from "@shared/opening"
 import { contract } from "./contract"
+
+/** The size a session starts at, before its window fits it to the screen. */
+const startingSize = { cols: 100, rows: 30 }
 
 /**
  * The Terminal Server: every session, for every window and for agents. It answers questions about
@@ -16,10 +20,23 @@ export default async function view() {
     // A window is a Process of this Program; it has ended once its Process has.
     const windows: Windows = {
         followEnds(ended) { program.subscribe("processExit", event => ended(event.process.identity)) },
-        async exists(window) { return await program.findProcess(window) !== null }
+        async exists(window) { return await program.findProcess(window) !== null },
+        async close(window) { await (await program.findProcess(window))?.exit() }
     }
 
     const sessions = new Sessions(windows)
+
+    // A window begins with a session of its own, in the folder it was opened for, if any: by its
+    // options, or by a terminal: address it was opened with. The Process running this Service has no
+    // window, and so no session.
+    async function begin(process: Awaited<ReturnType<typeof program.createProcess>>) {
+        if (!await process.client.running()) return
+        const cwd = process.options.cwd ?? folderOf(process.opened)
+        await sessions.begin(process.identity, { ...startingSize, ...(cwd ? { cwd } : {}) })
+    }
+
+    program.subscribe("processCreate", process => void begin(process).catch(() => undefined))
+    for (const process of await program.processes()) void begin(process).catch(() => undefined)
 
     sessions.subscribe(event => {
         if (event.type === "changed") void context.publish("sessions.changed", sessions.list())

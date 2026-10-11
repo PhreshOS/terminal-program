@@ -1,11 +1,11 @@
-import { folderAddress, folderOf } from "@client/core/opening"
+import { folderAddress } from "@shared/opening"
 import { ask, followSessions, type SessionEntry } from "@client/core/terminal-server"
 import usePromise from "@libs/react-promise"
 import { context, system } from "@phreshos/client"
 import { usePresentationState, useWindowState } from "@phreshos/react"
 import { Button, Tabs, Window, useAppearance, useThemedValue } from "@phreshos/react-ui"
 import { FolderOpen, Plus, Server, X } from "@phreshos/react-ui/icons"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import icon from "@/icon.png"
 import { useFirstArrival } from "./readiness"
 import Screen from "./screen"
@@ -21,8 +21,8 @@ const startingSize = { cols: 100, rows: 30 }
 
 /**
  * The Terminal as a window. Its tabs are its own sessions: "+" starts one, closing a tab ends it, and
- * closing the window ends them all. A new window starts with a new session, and closing its last tab
- * closes it.
+ * closing the window ends them all. The Terminal Server starts a new window's first session and closes
+ * the window with its last, once for every Desktop that shows it.
  */
 export default function TerminalWindow({ window: me }: Readonly<{ window: string }>) {
     const initial = usePromise(() => ask<readonly SessionEntry[]>("sessions.list"), [])
@@ -34,24 +34,10 @@ export default function TerminalWindow({ window: me }: Readonly<{ window: string
     const [chosen, setChosen] = useState<string | null>(null)
     const current = mine.find(session => session.session === chosen) ?? mine.at(-1) ?? null
 
-    const start = usePromise(async (cwd?: string) => {
-        const created = await ask<SessionEntry>("session.create", { window: me, ...startingSize, ...(cwd ? { cwd } : {}) })
+    const start = usePromise(async () => {
+        const created = await ask<SessionEntry>("session.create", { window: me, ...startingSize })
         setChosen(created.session)
     })
-
-    // A new window starts with a session of its own, in the folder it was opened for, if any: by its
-    // options, or by a terminal: address it was opened with. Once it has had sessions, losing the last
-    // closes it.
-    const started = useRef(false)
-    useEffect(() => {
-        if (sessions === null) return
-        if (mine.length > 0) { started.current = true; return }
-        if (!started.current) {
-            started.current = true
-            void Promise.all([context.options("cwd"), context.opened()]).then(([cwd, opened]) => start.safeExecute(cwd ?? folderOf(opened)))
-        }
-        else void context.process().then(process => process.exit())
-    }, [sessions, mine.length])
 
     const window = useWindowState(context.window)
     // Focused as the Desktop showing it decides; it may focus another Window than the System's front one.
