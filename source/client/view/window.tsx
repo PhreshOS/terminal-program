@@ -2,7 +2,7 @@ import { folderAddress, folderOf } from "@client/core/opening"
 import { ask, followSessions, type SessionEntry } from "@client/core/terminal-server"
 import usePromise from "@libs/react-promise"
 import { context, system } from "@phreshos/client"
-import { useWindowState } from "@phreshos/react"
+import { usePresentationState, useWindowState } from "@phreshos/react"
 import { Button, Tabs, Window, useAppearance, useThemedValue } from "@phreshos/react-ui"
 import { FolderOpen, Plus, Server, X } from "@phreshos/react-ui/icons"
 import { useEffect, useRef, useState } from "react"
@@ -54,6 +54,8 @@ export default function TerminalWindow({ window: me }: Readonly<{ window: string
     }, [sessions, mine.length])
 
     const window = useWindowState(context.window)
+    // Focused as the Desktop showing it decides; it may focus another Window than the System's front one.
+    const drawing = usePresentationState(context.presentation)
     const toggleMaximize = async () => context.window.maximize(!await context.window.maximized())
 
     // The window's initial state is its sessions and the first screen drawn; a problem reaching the
@@ -69,7 +71,7 @@ export default function TerminalWindow({ window: me }: Readonly<{ window: string
 
     return <div className="terminal-window">
         <Window.Header
-            active={window?.front ?? true}
+            active={drawing?.focused ?? true}
             beginMoveGesture={context.presentation.beginMoveGesture}
             maximized={window?.maximized ?? false}
             onMaximize={() => void toggleMaximize()}
