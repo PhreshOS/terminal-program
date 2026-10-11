@@ -147,7 +147,7 @@ export default function Screen({ session, window, onDrawn }: Readonly<{ session:
         }
     }, [session, window])
 
-    return <Surface depth="recessed" className="screen" onClick={() => terminal.current?.focus()}>
+    return <Surface depth="recessed" material="extended" className="screen" onClick={() => terminal.current?.focus()}>
         <div ref={element} className="screen-terminal" />
     </Surface>
 }
