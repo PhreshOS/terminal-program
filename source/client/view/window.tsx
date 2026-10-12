@@ -1,7 +1,8 @@
 import { folderAddress } from "@shared/opening"
 import { ask, followSessions, type SessionEntry } from "@client/core/terminal-server"
+import { openOver } from "@client/core/over"
 import usePromise from "@libs/react-promise"
-import { context, system } from "@phreshos/client"
+import { context } from "@phreshos/client"
 import { usePresentationState, useWindowState } from "@phreshos/react"
 import { Button, Tabs, Window, useAppearance, useThemedValue } from "@phreshos/react-ui"
 import { FolderOpen, Plus, Server, X } from "@phreshos/react-ui/icons"
@@ -78,9 +79,9 @@ export default function TerminalWindow({ window: me }: Readonly<{ window: string
                 <Button iconOnly depth="none" size="small" aria-label="New session" onPress={() => void start.safeExecute()}><Plus /></Button>
             </Window.Header.Center>
             <Window.Header.Actions>
-                {/* The folder opens with whatever the owner opens folders with, such as Files. */}
+                {/* The folder opens over this Window, with whatever the owner opens folders with, such as Files. */}
                 <Window.Header.Action iconOnly aria-label="Show the session's folder" disabled={!current}
-                    onPress={() => current && void system.open({ type: "inode/directory", uri: folderAddress(current.cwd) }).catch(() => undefined)}><FolderOpen /></Window.Header.Action>
+                    onPress={() => current && void openOver({ type: "inode/directory", uri: folderAddress(current.cwd) }).catch(() => undefined)}><FolderOpen /></Window.Header.Action>
                 <Window.Header.Minimize preventFocusOnPress={false} onPress={() => void context.window.minimize()} />
                 <Window.Header.Maximize />
                 <Window.Header.Close preventFocusOnPress={false} onPress={() => void context.process().then(process => process.exit())} />
