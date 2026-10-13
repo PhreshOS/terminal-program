@@ -4,26 +4,24 @@ import { openOver } from "@client/core/over"
 import usePromise from "@libs/react-promise"
 import { context } from "@phreshos/client"
 import { usePresentationState, useWindowState } from "@phreshos/react"
-import { Button, Tabs, Window, useAppearance, useThemedValue } from "@phreshos/react-ui"
-import { FolderOpen, Plus, Server, X } from "@phreshos/react-ui/icons"
+import { Button, DocumentTabs, Window, useAppearance, useThemedValue } from "@phreshos/react-ui"
+import { FolderOpen, Server } from "@phreshos/react-ui/icons"
 import { useEffect, useState } from "react"
 import icon from "@/icon.png"
 import { useFirstArrival } from "./readiness"
 import Screen from "./screen"
 
-/**
- * Every tab asks for this width, as in a browser, whatever its title. The tabs share the room in equal
- * columns, so when they do not all fit, each narrows to its column, evenly, rather than overlapping.
- */
-const tabWidth = { width: "10.5rem", maxWidth: "100%", justifyContent: "flex-start" }
-
 /** The size a new session starts at, before its window fits it to the screen. */
 const startingSize = { cols: 100, rows: 30 }
+
+/** Where a window remembers the tab shown last, on whichever Desktop showed it. */
+const shownTab = "tab.shown"
 
 /**
  * The Terminal as a window. Its tabs are its own sessions: "+" starts one, closing a tab ends it, and
  * closing the window ends them all. The Terminal Server starts a new window's first session and closes
- * the window with its last, once for every Desktop that shows it.
+ * the window with its last, once for every Desktop that shows it. Their order is the Server's, so every
+ * window and agent sees the order they are moved to.
  */
 export default function TerminalWindow({ window: me }: Readonly<{ window: string }>) {
     const initial = usePromise(() => ask<readonly SessionEntry[]>("sessions.list"), [])
@@ -33,7 +31,15 @@ export default function TerminalWindow({ window: me }: Readonly<{ window: string
 
     const mine = sessions?.filter(session => session.window === me) ?? []
     const [chosen, setChosen] = useState<string | null>(null)
-    const current = mine.find(session => session.session === chosen) ?? mine.at(-1) ?? null
+    // Which tab is shown is each Desktop's own, and is not followed between them. The last one shown
+    // anywhere is remembered in this window's memory, so the window, loaded again, starts on it.
+    const [remembered, setRemembered] = useState<string | null | undefined>(undefined)
+    useEffect(() => { void context.memory.get<string>(shownTab).then(shown => setRemembered(shown ?? null), () => setRemembered(null)) }, [])
+    const current = mine.find(session => session.session === (chosen ?? remembered)) ?? mine.at(-1) ?? null
+    // Written only once read, so a window loading does not overwrite what it is about to start from.
+    useEffect(() => {
+        if (current && remembered !== undefined) void context.memory.set(shownTab, current.session).catch(() => undefined)
+    }, [current?.session, remembered])
 
     const start = usePromise(async () => {
         const created = await ask<SessionEntry>("session.create", { window: me, ...startingSize })
@@ -48,7 +54,7 @@ export default function TerminalWindow({ window: me }: Readonly<{ window: string
     // The window's initial state is its sessions and the first screen drawn; a problem reaching the
     // Server is shown as it is. Screens drawn later, for another tab, appear in place.
     const [drawn, setDrawn] = useState(false)
-    useFirstArrival(initial.exception !== undefined || (sessions !== null && drawn))
+    useFirstArrival(initial.exception !== undefined || (sessions !== null && remembered !== undefined && drawn))
 
     if (initial.exception) return <div className="problem">
         <p>The Terminal could not reach its Server.</p>
@@ -65,18 +71,14 @@ export default function TerminalWindow({ window: me }: Readonly<{ window: string
         >
             <Window.Header.Identity icon={icon} />
             {/* The center holds the controls only; the empty header around them still moves the window. */}
-            <Window.Header.Center style={{ flex: "0 1 auto", gap: "0.25rem", minWidth: 0 }}>
-                {mine.length > 0 && <Tabs value={current?.session} onChange={setChosen} size="small" style={{ minWidth: 0 }}>
-                    <Tabs.List aria-label="Sessions">
-                        {mine.map(session => <Tabs.Tab key={session.session} id={session.session} style={tabWidth}>
-                            <span className="tab"><StateDot session={session} /><span className="tab-title">{session.title}</span>
-                                <span role="button" aria-label={`End ${session.title}`} title="End this session" className="tab-close"
-                                    onPointerDown={event => event.stopPropagation()} onClick={() => void ask("session.close", { session: session.session }).catch(() => undefined)}><X size={12} /></span>
-                            </span>
-                        </Tabs.Tab>)}
-                    </Tabs.List>
-                </Tabs>}
-                <Button iconOnly depth="none" size="small" aria-label="New session" onPress={() => void start.safeExecute()}><Plus /></Button>
+            <Window.Header.Center style={{ flex: "0 1 auto", minWidth: 0 }}>
+                {/* The sessions are the Server's: ending and moving them asks it, and its new list redraws them. */}
+                <DocumentTabs aria-label="Sessions" size="small" value={current?.session ?? null} onChange={setChosen} addLabel="New session"
+                    onClose={session => void ask("session.close", { session }).catch(() => undefined)}
+                    onMove={(session, index) => void ask("session.move", { session, index }).catch(() => undefined)}
+                    onAdd={() => void start.safeExecute()}>
+                    {mine.map(session => <DocumentTabs.Tab key={session.session} id={session.session} title={session.title} icon={<StateDot session={session} />} />)}
+                </DocumentTabs>
             </Window.Header.Center>
             <Window.Header.Actions>
                 {/* The folder opens over this Window, with whatever the owner opens folders with, such as Files. */}
@@ -87,7 +89,7 @@ export default function TerminalWindow({ window: me }: Readonly<{ window: string
                 <Window.Header.Close preventFocusOnPress={false} onPress={() => void context.process().then(process => process.exit())} />
             </Window.Header.Actions>
         </Window.Header>
-        {current ? <Screen key={current.session} session={current.session} window={me} onDrawn={() => setDrawn(true)} /> : <div className="screen-empty" />}
+        {current && remembered !== undefined ? <Screen key={current.session} session={current.session} window={me} onDrawn={() => setDrawn(true)} /> : <div className="screen-empty" />}
         {current && <StatusLine session={current} />}
     </div>
 }

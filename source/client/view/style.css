@@ -38,10 +38,6 @@ body {
 
 .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; display: inline-block; }
 
-.tab { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0.4rem; flex: 1 1 auto; min-width: 0; }
-.tab-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: start; }
-.tab-close { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 4px; opacity: 0.45; cursor: pointer; }
-.tab-close:hover { opacity: 1; background: color-mix(in oklab, currentColor 12%, transparent); }
 
 .status-line { display: flex; align-items: center; gap: 1rem; min-width: 0; padding: 0.4rem 0.875rem 0.5rem; font-size: 0.75rem; }
 .status-part { display: inline-flex; align-items: center; gap: 0.35rem; opacity: 0.62; white-space: nowrap; }
