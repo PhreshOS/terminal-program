@@ -126,3 +126,29 @@ test("a window that ends is not closed again by its sessions ending with it", as
     await until(() => sessions.list().length === 0)
     expect(closed).toEqual([])
 })
+
+test("a session moves among its own window's sessions, and every window hears the new order", async () => {
+    const open = new Set(["a", "b"])
+    const { windows } = fakeWindows(open)
+    const sessions = new Sessions(windows)
+    // Two windows' sessions, started in turns, so each window's lie between the other's.
+    const started: string[] = []
+    for (const window of ["a", "b", "a", "b", "a"]) started.push((await sessions.create(window, { cols: 80, rows: 24 })).session)
+    for (const session of started) opened.push({ close: () => { try { sessions.close(session) } catch { /* already ended */ } } })
+    const [first, otherFirst, second, otherSecond, third] = started
+    const order = (window: string) => sessions.list().filter(session => session.window === window).map(session => session.session)
+    let changes = 0
+    sessions.subscribe(event => { if (event.type === "changed") changes++ })
+
+    sessions.move(third!, 0)
+    expect(order("a")).toEqual([third, first, second])
+    expect(order("b")).toEqual([otherFirst, otherSecond])
+    expect(changes).toBe(1)
+
+    // Already there, or past the last when it is last: nothing moves.
+    sessions.move(third!, 0)
+    sessions.move(second!, 99)
+    expect(changes).toBe(1)
+    sessions.move(first!, 99)
+    expect(order("a")).toEqual([third, second, first])
+})

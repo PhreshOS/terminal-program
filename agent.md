@@ -4,7 +4,7 @@ Terminal runs shell sessions on the machine and shows them as tabs. A session
 belongs to the window that started it, and ends when that window closes.
 
 Every session lives in one Server: the Process named `terminal`, Server only,
-which is also the `terminal` Service. It starts with the System. Terminal
+whose Server holds the `terminal` Service. It starts with the System. Terminal
 windows are Client-only Processes that reach it.
 
 Reach it with:
@@ -19,7 +19,8 @@ Never start another Server, and never give a window Process a Server.
 
 1. `sessions.list` returns every session: `{ session, title, shell, cwd, cols,
    rows, state, createdAt, window }`. `window` is the identity of the window
-   Process it belongs to. `state` is `running`
+   Process it belongs to, and each window's sessions come in the order its tabs
+   show. `state` is `running`
    while a command runs in front, `idle` while the shell waits.
 2. Type with `session.write` `{ session, data }`. End a command line with `\r`.
 3. Read the screen with `session.text` `{ session }`: the whole screen and its
@@ -48,6 +49,7 @@ It opens with the terminal the owner chose, and starts it if it is not running.
 | Event | Payload | Does |
 | --- | --- | --- |
 | `session.close` | `{ session }` | Ends the shell |
+| `session.move` | `{ session, index }` | Moves the session to a place among its window's tabs, from 0 |
 | `session.resize` | `{ session, cols, rows }` | Resizes the shell and its screen |
 
 `session.create`, `session.watch`, `session.unwatch`, and `session.acknowledge`

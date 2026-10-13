@@ -77,6 +77,29 @@ export default class Sessions {
         this.get(identity).close()
     }
 
+    /**
+     * Moves a session to a place among its window's sessions, counted from 0; past the last, it goes
+     * last. Every window and agent then lists them in that order.
+     */
+    public move(identity: string, index: number) {
+        this.get(identity)
+        const window = this.windowOf.get(identity)!
+        const order = [...this.sessions.keys()]
+        const mine = order.filter(other => this.windowOf.get(other) === window)
+        // Only the order within its window counts: already at that place, nothing moves.
+        if (mine.indexOf(identity) === Math.min(index, mine.length - 1)) return
+        const others = order.filter(other => other !== identity)
+        const theirs = mine.filter(other => other !== identity)
+        // It goes before the one now at its new place, or after its window's last session.
+        const before = theirs[index]
+        const at = before !== undefined ? others.indexOf(before) : others.indexOf(theirs.at(-1)!) + 1
+        const moved = [...others.slice(0, at), identity, ...others.slice(at)]
+        const sessions = new Map(moved.map(other => [other, this.sessions.get(other)!]))
+        this.sessions.clear()
+        for (const [key, session] of sessions) this.sessions.set(key, session)
+        this.emit({ type: "changed" })
+    }
+
     /** A window ended: so do its sessions. */
     private windowEnded(window: string) {
         this.begun.delete(window)

@@ -1,7 +1,7 @@
 import { context } from "@phreshos/server"
 import Sessions, { type Windows } from "@server/core/sessions"
 import { outputEvent } from "@shared/events"
-import { terminalService } from "@shared/service"
+import { terminalLaunch } from "@shared/launch"
 import { folderOf } from "@shared/opening"
 import { contract } from "./contract"
 
@@ -59,6 +59,11 @@ export default async function view() {
 
     context.answer("session.close", ({ payload }) => sessions.close(contract.session.parse(payload).session))
 
+    context.answer("session.move", ({ payload }) => {
+        const { session, index } = contract.move.parse(payload)
+        sessions.move(session, index)
+    })
+
     context.answer("session.write", ({ payload }) => {
         const { session, data } = contract.write.parse(payload)
         sessions.get(session).write(data)
@@ -106,6 +111,6 @@ const startupRecorded = "startup.recorded"
  */
 async function startWithTheSystem(program: Awaited<ReturnType<typeof context.program>>) {
     if (await program.store.get<boolean>(startupRecorded)) return
-    await program.startup.set(terminalService)
+    await program.startup.set(terminalLaunch)
     await program.store.set(startupRecorded, true)
 }

@@ -18,9 +18,9 @@ The Server keeps each session's screen in a headless terminal, so a window
 takes it as it is, then follows its output in numbered batches. A shell that
 writes faster than the window draws waits for it.
 
-Other Programs reach Terminal through the `terminal` Service, such as Files
-opening a folder in it; Terminal shows a folder in Files through the `files`
-Service, when a Program offers it. Agents use the same Service:
+Any Program opens a shell at a folder through a `terminal:` address, as Files
+does, and Terminal opens a folder with whatever opens folders. Other Programs
+and agents reach its sessions through the `terminal` Service:
 [`agent.md`](agent.md) describes it.
 
 ## Installation

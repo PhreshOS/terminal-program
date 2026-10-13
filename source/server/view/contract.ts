@@ -12,6 +12,7 @@ export const contract = {
     open: z.object({ cwd: folder, position: z.object({ x: value, y: value }).optional() }),
     create: z.object({ window: identity, ...size, cwd: folder.optional() }),
     session: z.object({ session: identity }),
+    move: z.object({ session: identity, index: z.number().int().min(0).max(10_000) }),
     write: z.object({ session: identity, data: z.string().max(1024 * 1024) }),
     resize: z.object({ session: identity, ...size }),
     watch: z.object({ session: identity, window: identity }),
