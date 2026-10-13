@@ -7,10 +7,18 @@ Every session lives in one Server: the Process named `terminal`, Server only,
 whose Server holds the `terminal` Service. It starts with the System. Terminal
 windows are Client-only Processes that reach it.
 
-Reach it with:
+Every request here is an Execute request: a JSON object the System understands
+as it is. Ask the Server with an `endpoint` `ask` request, the event's payload
+as its `input`:
 
-```sh
-phresh endpoint ask --program terminal --process terminal --endpoint server --event sessions.list --json
+```json
+{ "$domain": "endpoint", "$operation": "ask", "program": "terminal", "process": "terminal", "endpoint": "server", "event": "sessions.list" }
+```
+
+When the Process is not running, find or create it, Server only:
+
+```json
+{ "$domain": "process", "$operation": "findOrCreate", "program": "terminal", "launch": { "name": "terminal", "server": true, "client": false } }
 ```
 
 Never start another Server, and never give a window Process a Server.
@@ -40,9 +48,13 @@ Desktop's plane; without it the System places the window.
 Prefer a session someone already sees, or open one with `session.open`, so the
 owner sees what you do.
 
-Any Program can also open a shell at a folder without this Service, through
-the System: `system.open({ type: "x-scheme-handler/terminal", uri: "terminal:///absolute/folder" })`.
-It opens with the terminal the owner chose, and starts it if it is not running.
+A shell at a folder can also be opened without this Service, through the
+System's opening, with the terminal the owner chose, started if it is not
+running:
+
+```json
+{ "$domain": "system", "$operation": "open", "type": "x-scheme-handler/terminal", "uri": "terminal:///absolute/folder" }
+```
 
 ## Other questions
 
