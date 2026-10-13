@@ -14,12 +14,14 @@ export default defineConfig({
   buildCommand: "vite-node scripts/build.ts",
   // It opens a shell at a folder for any Program that asks, through a terminal: address.
   opens: ["x-scheme-handler/terminal"],
-  // One Server holds every session, in the Process named "terminal", which is the "terminal" Service.
+  // Other Programs and agents reach its sessions by its Service name.
+  permissions: { provideServices: ["terminal"] },
+  // One Server holds every session, in the Process named "terminal"; that Server holds the "terminal" Service.
   // Windows are Clients that reach it, so a session outlives the window that showed it.
   server: {
     location: "dist/server",
     start: false,
-    service: true,
+    service: "terminal",
     worker: "main.js",
     installCommand: "npm install --omit=dev --no-audit && node install.mjs",
     devCommand: "vite-node source/server/main.ts"

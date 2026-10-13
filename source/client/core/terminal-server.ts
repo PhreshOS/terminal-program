@@ -3,7 +3,7 @@ import type { Process, ServerEndpoint } from "@phreshos/core"
 import type { Snapshot, Output } from "@server/core/session"
 import type { SessionEntry } from "@server/core/sessions"
 import { outputEvent } from "@shared/events"
-import { terminalService } from "@shared/service"
+import { terminalLaunch } from "@shared/launch"
 
 export type { Output, SessionEntry, Snapshot }
 
@@ -14,13 +14,13 @@ let shared: Promise<Shared> | undefined
 const listFollowers = new Set<(sessions: readonly SessionEntry[]) => void>()
 
 /**
- * The one Terminal Server every window uses, the "terminal" Service. It starts with the System; a
+ * The one Terminal Server every window uses, in the Process named "terminal". It starts with the System; a
  * window that finds it gone starts it again.
  */
 function server() {
     shared ??= (async () => {
         const program = await context.program()
-        const process = await program.findOrCreateProcess(terminalService)
+        const process = await program.findOrCreateProcess(terminalLaunch)
         await process.server.waitReady()
         process.server.subscribe("sessions.changed", payload => { for (const follow of listFollowers) follow(payload as readonly SessionEntry[]) })
         return { process, server: process.server }
