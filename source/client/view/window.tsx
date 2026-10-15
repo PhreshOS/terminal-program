@@ -98,7 +98,7 @@ export default function TerminalWindow({ window: me }: Readonly<{ window: string
 function StatusLine({ session }: Readonly<{ session: SessionEntry }>) {
     return <div className="status-line">
         <span className="status-part"><Server size={13} />This machine</span>
-        <span className="status-part">{session.shell.split("/").at(-1)} · {session.cols}×{session.rows}</span>
+        <span className="status-part">{session.shell.split(/[\\/]/).at(-1)} · {session.cols}×{session.rows}</span>
         <span className="status-spacer" />
         <span className="status-part">{session.state === "running" ? `running ${session.title}` : "ready"}</span>
     </div>

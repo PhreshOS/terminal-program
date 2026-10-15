@@ -1,7 +1,8 @@
 import { z } from "zod"
 
 const identity = z.string().min(1).max(100)
-const folder = z.string().startsWith("/")
+/** A folder from a root of the machine: `/home/me`, or `C:\Users\me` and `\\server\share` on Windows. */
+const folder = z.string().max(4096).regex(/^(?:\/|[A-Za-z]:[\\/]|\\\\)/, "A folder must start from a root of this machine")
 
 /** A place on the Desktop's plane: pixels, or a share of the view such as "50% - 200". */
 const value = z.union([z.number(), z.string().min(1).max(100)])
